@@ -3,14 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Learning.EventStore", "src\Learning.EventStore.xproj", "{DF108EC3-CED8-4D6E-B69E-0FC1A9606537}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8E84072C-5B59-4195-9469-404D0A38CA66}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E2C44AC5-12A7-48A3-92D7-118A0D70005C}"
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
 	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Learning.EventStore", "src\Learning.EventStore\Learning.EventStore.xproj", "{DF108EC3-CED8-4D6E-B69E-0FC1A9606537}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,8 +25,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{DF108EC3-CED8-4D6E-B69E-0FC1A9606537} = {8E84072C-5B59-4195-9469-404D0A38CA66}
 	EndGlobalSection
 EndGlobal
