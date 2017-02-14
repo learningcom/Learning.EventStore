@@ -31,6 +31,10 @@ namespace Learning.EventStore.Cache
             _repository = repository;
             _eventStore = eventStore;
             _cache = cache;
+            _cache.RegisterEvictionCallback(key =>
+            {
+                SemaphoreSlim.Release();
+            });
         }
 
         public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
