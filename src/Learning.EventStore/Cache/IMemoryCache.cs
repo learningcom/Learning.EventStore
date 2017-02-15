@@ -9,6 +9,5 @@ namespace Learning.EventStore.Cache
         void Set(Guid id, AggregateRoot aggregate);
         AggregateRoot Get(Guid id);
         void Remove(Guid id);
-        void RegisterEvictionCallback(Action<Guid> action);
     }
 }

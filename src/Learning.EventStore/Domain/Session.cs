@@ -45,7 +45,7 @@ namespace Learning.EventStore.Domain
                 return trackedAggregate;
             }
 
-            var aggregate = await _repository.Get<T>(id);
+            var aggregate = await _repository.Get<T>(id).ConfigureAwait(false); ;
             if (expectedVersion != null && aggregate.Version != expectedVersion)
             {
                 throw new ConcurrencyException(id);
@@ -64,7 +64,7 @@ namespace Learning.EventStore.Domain
         {
             foreach (var descriptor in _trackedAggregates.Values)
             {
-                await _repository.Save(descriptor.Aggregate, descriptor.Version);
+                await _repository.Save(descriptor.Aggregate, descriptor.Version).ConfigureAwait(false); ;
             }
             _trackedAggregates.Clear();
         }

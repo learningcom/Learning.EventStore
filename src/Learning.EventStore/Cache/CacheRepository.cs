@@ -31,23 +31,19 @@ namespace Learning.EventStore.Cache
             _repository = repository;
             _eventStore = eventStore;
             _cache = cache;
-            _cache.RegisterEvictionCallback(key =>
-            {
-                SemaphoreSlim.Release();
-            });
         }
 
         public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
             try
             {
-                await SemaphoreSlim.WaitAsync();
+                await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
                 if (aggregate.Id != Guid.Empty && !_cache.IsTracked(aggregate.Id))
                 {
                     _cache.Set(aggregate.Id, aggregate);
                 }
-                await _repository.Save(aggregate, expectedVersion);
+                await _repository.Save(aggregate, expectedVersion).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -64,13 +60,13 @@ namespace Learning.EventStore.Cache
         {
             try
             {
-                await SemaphoreSlim.WaitAsync();
+                await SemaphoreSlim.WaitAsync().ConfigureAwait(false); ;
 
                 T aggregate;
                 if (_cache.IsTracked(aggregateId))
                 {
                     aggregate = (T)_cache.Get(aggregateId);
-                    var events = await _eventStore.Get<T>(aggregateId, aggregate.Version);
+                    var events = await _eventStore.Get<T>(aggregateId, aggregate.Version).ConfigureAwait(false);
 
                     if (events.Any() && events.First().Version != aggregate.Version + 1)
                     {
@@ -83,7 +79,7 @@ namespace Learning.EventStore.Cache
                     }
                 }
 
-                aggregate = await _repository.Get<T>(aggregateId);
+                aggregate = await _repository.Get<T>(aggregateId).ConfigureAwait(false); ;
                 _cache.Set(aggregateId, aggregate);
                 return aggregate;
             }

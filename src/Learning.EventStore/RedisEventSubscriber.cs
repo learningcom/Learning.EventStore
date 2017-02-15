@@ -27,19 +27,19 @@ namespace Learning.EventStore
             //Register subscriber
             var eventType = typeof(T).Name;
             var setKey = $"Subscribers:{eventType}";
-            await Database.SetAddAsync(setKey, _keyPrefix);
+            await Database.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
 
             //Subscribe to the event
             Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
             {
                 var listKey = $"{{{_keyPrefix}:{eventType}}}:PublishedEvents";
                 var processingListKey = $"{{{_keyPrefix}:{eventType}}}:ProcessingEvents";
-                var eventData = await Database.ListRightPopLeftPushAsync(listKey, processingListKey);
+                var eventData = await Database.ListRightPopLeftPushAsync(listKey, processingListKey).ConfigureAwait(false);
                 var message = JsonConvert.DeserializeObject<T>(eventData);
                 callBack.Invoke(message);
-                await Database.ListRemoveAsync(processingListKey,eventData);
+                await Database.ListRemoveAsync(processingListKey,eventData).ConfigureAwait(false);
             };
-            await Subscriber.SubscribeAsync(eventType, redisCallback);
+            await Subscriber.SubscribeAsync(eventType, redisCallback).ConfigureAwait(false);
         }
     }
 }

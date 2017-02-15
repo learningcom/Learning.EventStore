@@ -1,24 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using FakeItEasy;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
 using NUnit.Framework;
 
-namespace Learning.EventStore.Test
+namespace Learning.EventStore.Test.Cache
 {
-    public class CacheTest
+    public class EvictCacheEntryTest
     {
         private readonly IRepository _cacheRepository;
         private readonly MemoryCache _memoryCache;
         private readonly TestAggregate _aggregate;
 
-        public CacheTest()
+        public EvictCacheEntryTest()
         {
             _memoryCache = new MemoryCache();
             IEventStore eventStore = new TestEventStore();
@@ -26,6 +21,13 @@ namespace Learning.EventStore.Test
             _aggregate = _cacheRepository.Get<TestAggregate>(Guid.NewGuid()).Result;
         }
 
-        
+        [Test]
+        public async Task GetsNewAggregateOnNextGetAfterEviction()
+        {
+            _memoryCache.Remove(_aggregate.Id);
+
+            var aggregate = await _cacheRepository.Get<TestAggregate>(_aggregate.Id);
+            Assert.AreNotEqual(_aggregate, aggregate);
+        }
     }
 }

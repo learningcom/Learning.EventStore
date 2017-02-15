@@ -71,23 +71,5 @@ namespace Learning.EventStore.Cache
             _cache.Remove(id);
 #endif
         }
-
-        public void RegisterEvictionCallback(Action<Guid> action)
-        {
-#if NET451
-            _policyFactory = () => new CacheItemPolicy
-            {
-                RemovedCallback = x =>
-                {
-                    action.Invoke(Guid.Parse(x.CacheItem.Key));
-                }
-            };
-#else
-            _cacheOptions.RegisterPostEvictionCallback((key, value, reason, state) =>
-            {
-                action.Invoke((Guid) key);
-            });
-#endif
-        }
     }
 }

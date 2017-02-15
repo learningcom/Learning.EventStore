@@ -26,8 +26,8 @@ namespace Learning.EventStore
 
         public async Task<IEnumerable<IEvent>> Get<T>(Guid aggregateId, int fromVersion)
         {
-            var listLength = await Database.ListLengthAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}");
-            var commitList = await Database.ListRangeAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}", 0, listLength);
+            var listLength = await Database.ListLengthAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}").ConfigureAwait(false); ;
+            var commitList = await Database.ListRangeAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}", 0, listLength).ConfigureAwait(false); ;
 
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             var events = commitList.Select(commit => Database.HashGet($"EventStore:{_keyPrefix}", commit))
@@ -42,7 +42,7 @@ namespace Learning.EventStore
             foreach (var @event in events)
             {
                 var hashKey = $"EventStore:{_keyPrefix}";
-                var commitId = await Database.HashLengthAsync(hashKey) + 1;
+                var commitId = await Database.HashLengthAsync(hashKey).ConfigureAwait(false) + 1;
                 var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
                 var serializedEvent = JsonConvert.SerializeObject(@event, settings);
 
@@ -52,7 +52,7 @@ namespace Learning.EventStore
                 taskList.Add(tran.ListRightPushAsync($"{{EventStore:{_keyPrefix}}}:{@event.Id}", commitId.ToString()));
                 taskList.Add(_publisher.Publish(@event));
 
-                await tran.ExecuteAsync();
+                await tran.ExecuteAsync().ConfigureAwait(false); ;
                 Task.WaitAll(taskList.ToArray());
             }
         }

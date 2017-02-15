@@ -31,9 +31,9 @@ namespace Learning.EventStore
                 var publishMessage = JsonConvert.SerializeObject(@event);
                 var listKey = $"{{{subscriber}:{eventType}}}:PublishedEvents";
 
-                await Database.ListRightPushAsync(listKey, publishMessage);
+                await Database.ListRightPushAsync(listKey, publishMessage).ConfigureAwait(false); ;
             }
-            await Subscriber.PublishAsync(eventType, true);
+            await Subscriber.PublishAsync(eventType, true).ConfigureAwait(false); ;
         }
     }
 }

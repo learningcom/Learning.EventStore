@@ -21,24 +21,23 @@ namespace Learning.EventStore.Domain
 
         public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
-            var existing = await _eventStore.Get<T>(aggregate.Id, expectedVersion.Value);
-            if (expectedVersion != null && existing.Any())
+            if (expectedVersion != null && (await _eventStore.Get<T>(aggregate.Id, expectedVersion.Value).ConfigureAwait(false)).Any())
             {
                 throw new ConcurrencyException(aggregate.Id);
             }
 
             var changes = aggregate.FlushUncommitedChanges();
-            await _eventStore.Save<T>(changes);
+            await _eventStore.Save<T>(changes).ConfigureAwait(false);
         }
 
         public async Task<T> Get<T>(Guid aggregateId) where T : AggregateRoot
         {
-            return await LoadAggregate<T>(aggregateId);
+            return await LoadAggregate<T>(aggregateId).ConfigureAwait(false); ;
         }
 
         private async Task<T> LoadAggregate<T>(Guid id) where T : AggregateRoot
         {
-            var events = await _eventStore.Get<T>(id, -1);
+            var events = await _eventStore.Get<T>(id, -1).ConfigureAwait(false); ;
             if (!events.Any())
             {
                 throw new AggregateNotFoundException(typeof(T), id);
