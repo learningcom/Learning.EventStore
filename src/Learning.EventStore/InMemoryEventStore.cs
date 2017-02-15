@@ -27,15 +27,18 @@ namespace Learning.EventStore
                     _inMemoryDb.Add(@event.Id, list);
                 }
                 list.Add(@event);
-                _publisher.Publish(@event);
+                await _publisher.Publish(@event);
             }
         }
 
         public async Task<IEnumerable<IEvent>> Get<T>(Guid aggregateId, int fromVersion)
         {
-            List<IEvent> events;
-            _inMemoryDb.TryGetValue(aggregateId, out events);
-            return events?.Where(x => x.Version > fromVersion) ?? new List<IEvent>();
+            return await Task.Run<IEnumerable<IEvent>>(() =>
+            {
+                List<IEvent> events;
+                _inMemoryDb.TryGetValue(aggregateId, out events);
+                return events?.Where(x => x.Version > fromVersion) ?? new List<IEvent>();
+            });
         }
     }
 }
