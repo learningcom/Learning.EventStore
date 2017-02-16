@@ -33,7 +33,7 @@ namespace Learning.EventStore
 
         public async Task<IEnumerable<IEvent>> Get<T>(Guid aggregateId, int fromVersion)
         {
-            return await Task.Run<IEnumerable<IEvent>>(() =>
+            return await Task.Run(() =>
             {
                 List<IEvent> events;
                 _inMemoryDb.TryGetValue(aggregateId, out events);

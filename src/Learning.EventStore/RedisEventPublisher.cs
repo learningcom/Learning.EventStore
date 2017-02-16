@@ -10,11 +10,9 @@ namespace Learning.EventStore
 {
     public class RedisEventPublisher : IEventPublisher
     {
-        private readonly Lazy<IConnectionMultiplexer> _redis;
-        private IDatabase Database => _redis.Value.GetDatabase();
-        private ISubscriber Subscriber => Database.Multiplexer.GetSubscriber();
+        private readonly IRedisClient _redis;
 
-        public RedisEventPublisher(Lazy<IConnectionMultiplexer> redis)
+        public RedisEventPublisher(IRedisClient redis)
         {
             _redis = redis;
         }
@@ -24,16 +22,16 @@ namespace Learning.EventStore
             var eventType = @event.GetType().Name;
 
             var subscriberKey = $"Subscribers:{eventType}";
-            var subscribers = Database.SetMembers(subscriberKey);
+            var subscribers = await _redis.SetMembersAsync(subscriberKey).ConfigureAwait(false);
 
             foreach (var subscriber in subscribers)
             {
                 var publishMessage = JsonConvert.SerializeObject(@event);
                 var listKey = $"{{{subscriber}:{eventType}}}:PublishedEvents";
 
-                await Database.ListRightPushAsync(listKey, publishMessage).ConfigureAwait(false); ;
+                await _redis.ListRightPushAsync(listKey, publishMessage).ConfigureAwait(false);
             }
-            await Subscriber.PublishAsync(eventType, true).ConfigureAwait(false); ;
+            await _redis.PublishAsync(eventType, true).ConfigureAwait(false);
         }
     }
 }

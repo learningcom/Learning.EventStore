@@ -10,13 +10,10 @@ namespace Learning.EventStore
 {
     public class RedisEventSubscriber : IEventSubscriber
     {
-        private readonly Lazy<IConnectionMultiplexer> _redis;
+        private readonly IRedisClient _redis;
         private readonly string _keyPrefix;
 
-        private IDatabase Database => _redis.Value.GetDatabase();
-        private ISubscriber Subscriber => Database.Multiplexer.GetSubscriber();
-
-        public RedisEventSubscriber(Lazy<IConnectionMultiplexer> redis, string keyPrefix)
+        public RedisEventSubscriber(IRedisClient redis, string keyPrefix)
         {
             _redis = redis;
             _keyPrefix = keyPrefix;
@@ -27,19 +24,19 @@ namespace Learning.EventStore
             //Register subscriber
             var eventType = typeof(T).Name;
             var setKey = $"Subscribers:{eventType}";
-            await Database.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
+            await _redis.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
 
             //Subscribe to the event
             Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
             {
                 var listKey = $"{{{_keyPrefix}:{eventType}}}:PublishedEvents";
                 var processingListKey = $"{{{_keyPrefix}:{eventType}}}:ProcessingEvents";
-                var eventData = await Database.ListRightPopLeftPushAsync(listKey, processingListKey).ConfigureAwait(false);
+                var eventData = await _redis.ListRightPopLeftPushAsync(listKey, processingListKey).ConfigureAwait(false);
                 var message = JsonConvert.DeserializeObject<T>(eventData);
                 callBack.Invoke(message);
-                await Database.ListRemoveAsync(processingListKey,eventData).ConfigureAwait(false);
+                await _redis.ListRemoveAsync(processingListKey,eventData).ConfigureAwait(false);
             };
-            await Subscriber.SubscribeAsync(eventType, redisCallback).ConfigureAwait(false);
+            await _redis.SubscribeAsync(eventType, redisCallback).ConfigureAwait(false);
         }
     }
 }
