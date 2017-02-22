@@ -37,7 +37,7 @@ namespace Learning.EventStore.Domain
 
         private async Task<T> LoadAggregate<T>(Guid id) where T : AggregateRoot
         {
-            var events = await _eventStore.Get(id, -1).ConfigureAwait(false); ;
+            var events = await _eventStore.Get(id, -1).ConfigureAwait(false);
             if (!events.Any())
             {
                 throw new AggregateNotFoundException(typeof(T), id);

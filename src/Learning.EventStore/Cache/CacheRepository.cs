@@ -60,7 +60,7 @@ namespace Learning.EventStore.Cache
         {
             try
             {
-                await SemaphoreSlim.WaitAsync().ConfigureAwait(false); ;
+                await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
                 T aggregate;
                 if (_cache.IsTracked(aggregateId))
@@ -79,7 +79,7 @@ namespace Learning.EventStore.Cache
                     }
                 }
 
-                aggregate = await _repository.Get<T>(aggregateId).ConfigureAwait(false); ;
+                aggregate = await _repository.Get<T>(aggregateId).ConfigureAwait(false);
                 _cache.Set(aggregateId, aggregate);
                 return aggregate;
             }
