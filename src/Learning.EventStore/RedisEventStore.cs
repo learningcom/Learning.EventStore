@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -23,7 +20,7 @@ namespace Learning.EventStore
             _keyPrefix = keyPrefix;
         }
 
-        public async Task<IEnumerable<IEvent>> Get<T>(Guid aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> Get(Guid aggregateId, int fromVersion)
         {
             //Get all the commits for the aggregateId
             var listLength = await _redis.ListLengthAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}").ConfigureAwait(false);
@@ -46,7 +43,7 @@ namespace Learning.EventStore
             return events;
         }
 
-        public async Task Save<T>(IEnumerable<IEvent> events)
+        public async Task Save(IEnumerable<IEvent> events)
         {
             var hashKey = $"EventStore:{_keyPrefix}";
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
@@ -61,7 +58,7 @@ namespace Learning.EventStore
                 //Increment the commitId
                 var commitId = await _redis.HashLengthAsync(hashKey).ConfigureAwait(false) + 1;
 
-                //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup,O(1), of individual events
+                //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
                 var hashSetTask = tran.HashSetAsync(hashKey, commitId, serializedEvent).ConfigureAwait(false);
 
                 //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)

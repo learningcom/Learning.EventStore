@@ -3,7 +3,7 @@
 
   "dependencies": {
     "NETStandard.Library": "1.6.1",
-    "FakeItEasy": "3.0.0-beta002",
+    "FakeItEasy": "3.0.0-beta002-build000066",
     "NUnit": "3.6.0",
     "Learning.EventStore": "1.0.0-*",
     "dotnet-test-nunit": "3.4.0-beta-3"

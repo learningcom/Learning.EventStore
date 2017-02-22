@@ -32,7 +32,7 @@ namespace Learning.EventStore.Test.Domain
                 await _repository.Get<TestAggregateNoParameterLessConstructor>(_id);
                 Assert.Fail();
             }
-            catch(MissingParameterLessConstructorException e)
+            catch(MissingParameterLessConstructorException)
             {
                 Assert.Pass();
             }

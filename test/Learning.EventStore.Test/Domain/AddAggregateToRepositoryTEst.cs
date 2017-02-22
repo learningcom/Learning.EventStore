@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
