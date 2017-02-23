@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Threading.Tasks;
-using Learning.EventStore.Messages;
+﻿using System.Threading.Tasks;
 using Newtonsoft.Json;
-using StackExchange.Redis;
 
 namespace Learning.EventStore
 {
@@ -21,7 +16,7 @@ namespace Learning.EventStore
         {
             var eventType = @event.GetType().Name;
 
-            //Get all registered subscribers for this event
+            //Get all registered subscribers for this event stored in the Redis set at 'subscriberKey'
             var subscriberKey = $"Subscribers:{eventType}";
             var subscribers = await _redis.SetMembersAsync(subscriberKey).ConfigureAwait(false);
 
