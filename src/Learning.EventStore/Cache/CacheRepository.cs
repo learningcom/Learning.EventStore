@@ -39,7 +39,7 @@ namespace Learning.EventStore.Cache
             {
                 await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
-                if (aggregate.Id != Guid.Empty && !_cache.IsTracked(aggregate.Id))
+                if (!string.IsNullOrEmpty(aggregate.Id) && !_cache.IsTracked(aggregate.Id))
                 {
                     _cache.Set(aggregate.Id, aggregate);
                 }
@@ -56,7 +56,7 @@ namespace Learning.EventStore.Cache
             }
         }
 
-        public async Task<T> Get<T>(Guid aggregateId) where T : AggregateRoot
+        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
         {
             try
             {

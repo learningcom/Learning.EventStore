@@ -4,7 +4,7 @@ namespace Learning.EventStore.Domain.Exceptions
 {
     public class EventsOutOfOrderException : System.Exception
     {
-        public EventsOutOfOrderException(Guid id)
+        public EventsOutOfOrderException(string id)
             : base($"Eventstore gave event for aggregate {id} out of order")
         { }
     }

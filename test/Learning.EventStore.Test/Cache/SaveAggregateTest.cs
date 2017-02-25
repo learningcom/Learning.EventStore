@@ -18,7 +18,7 @@ namespace Learning.EventStore.Test.Cache
         {
             _testRep = new TestRepository();
             _rep = new CacheRepository(_testRep, new TestInMemoryEventStore(), new MemoryCache());
-            _aggregate = _testRep.Get<TestAggregate>(Guid.NewGuid()).Result;
+            _aggregate = _testRep.Get<TestAggregate>(Guid.NewGuid().ToString()).Result;
             _aggregate.DoSomething();
         }
 
@@ -41,9 +41,9 @@ namespace Learning.EventStore.Test.Cache
         public async Task DoesNotCacheEmptyId()
         {
             await _rep.Save(_aggregate, -1);
-            var aggregate = new TestAggregate(Guid.Empty);
+            var aggregate = new TestAggregate(Guid.Empty.ToString());
             await _rep.Save(aggregate);
-            Assert.AreNotEqual(aggregate, _rep.Get<TestAggregate>(Guid.Empty));
+            Assert.AreNotEqual(aggregate, _rep.Get<TestAggregate>(Guid.Empty.ToString()));
         }
     }
 }

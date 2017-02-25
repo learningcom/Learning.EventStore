@@ -22,7 +22,7 @@ namespace Learning.EventStore.Test.Domain
             _rep = new Repository(_eventStore);
             _session = new Session(_rep);
 
-            _aggregate = new TestAggregate(Guid.NewGuid());
+            _aggregate = new TestAggregate(Guid.NewGuid().ToString());
             _aggregate.DoSomething();
             _rep.Save(_aggregate).Wait();
         }

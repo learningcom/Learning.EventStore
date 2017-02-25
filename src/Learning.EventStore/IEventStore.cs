@@ -8,6 +8,6 @@ namespace Learning.EventStore
     public interface IEventStore
     {
         Task Save(IEnumerable<IEvent> events);
-        Task<IEnumerable<IEvent>> Get(Guid aggregateId, int fromVersion);
+        Task<IEnumerable<IEvent>> Get(string aggregateId, int fromVersion);
     }
 }

@@ -8,7 +8,7 @@ namespace Learning.EventStore
     public class InMemoryEventStore : IEventStore
     {
 
-        private readonly Dictionary<Guid, List<IEvent>> _inMemoryDb = new Dictionary<Guid, List<IEvent>>();
+        private readonly Dictionary<string, List<IEvent>> _inMemoryDb = new Dictionary<string, List<IEvent>>();
         private readonly IEventPublisher _publisher;
         public InMemoryEventStore(IEventPublisher publisher)
         {
@@ -31,7 +31,7 @@ namespace Learning.EventStore
             }
         }
 
-        public async Task<IEnumerable<IEvent>> Get(Guid aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> Get(string aggregateId, int fromVersion)
         {
             return await Task.Run(() =>
             {

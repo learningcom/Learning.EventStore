@@ -12,11 +12,11 @@ namespace Learning.EventStore.Test.Mocks
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<IEvent>> Get(Guid aggregateId, int version)
+        public Task<IEnumerable<IEvent>> Get(string aggregateId, int version)
         {
             return Task.Run<IEnumerable<IEvent>>(() =>
             {
-                if (aggregateId == Guid.Empty)
+                if (string.IsNullOrEmpty(aggregateId))
                 {
                     return new List<IEvent>();
                 }

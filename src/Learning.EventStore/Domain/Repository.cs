@@ -30,12 +30,12 @@ namespace Learning.EventStore.Domain
             await _eventStore.Save(changes).ConfigureAwait(false);
         }
 
-        public async Task<T> Get<T>(Guid aggregateId) where T : AggregateRoot
+        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
         {
             return await LoadAggregate<T>(aggregateId).ConfigureAwait(false); ;
         }
 
-        private async Task<T> LoadAggregate<T>(Guid id) where T : AggregateRoot
+        private async Task<T> LoadAggregate<T>(string id) where T : AggregateRoot
         {
             var events = await _eventStore.Get(id, -1).ConfigureAwait(false);
             if (!events.Any())

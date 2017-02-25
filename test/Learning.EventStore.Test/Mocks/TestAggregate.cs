@@ -6,7 +6,7 @@ namespace Learning.EventStore.Test.Mocks
     public class TestAggregate : AggregateRoot
     {
         private TestAggregate() { }
-        public TestAggregate(Guid id)
+        public TestAggregate(string id)
         {
             Id = id;
             ApplyChange(new TestAggregateCreated());

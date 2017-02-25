@@ -20,7 +20,7 @@ namespace Learning.EventStore.Test.Cache
             _memoryCache = new MemoryCache();
             var eventStore = new TestEventStoreWithBugs();
             _cacheRepository = new CacheRepository(new TestRepository(), eventStore, _memoryCache);
-            _aggregate = _cacheRepository.Get<TestAggregate>(Guid.NewGuid()).Result;
+            _aggregate = _cacheRepository.Get<TestAggregate>(Guid.NewGuid().ToString()).Result;
         }
 
         [Test]

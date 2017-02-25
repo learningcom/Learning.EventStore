@@ -9,7 +9,7 @@ namespace Learning.EventStore.Domain
     {
         private readonly List<IEvent> _changes = new List<IEvent>();
 
-        public Guid Id { get; protected set; }
+        public string Id { get; protected set; }
         public int Version { get; protected set; }
 
         public IEnumerable<IEvent> GetUncommittedChanges()
@@ -28,11 +28,11 @@ namespace Learning.EventStore.Domain
                 var i = 0;
                 foreach (var @event in changes)
                 {
-                    if (@event.Id == Guid.Empty && Id == Guid.Empty)
+                    if (string.IsNullOrEmpty(@event.Id) && string.IsNullOrEmpty(Id))
                     {
                         throw new AggregateOrEventMissingIdException(GetType(), @event.GetType());
                     }
-                    if (@event.Id == Guid.Empty)
+                    if (string.IsNullOrEmpty(@event.Id))
                     {
                         @event.Id = Id;
                     }

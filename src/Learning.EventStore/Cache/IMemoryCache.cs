@@ -5,9 +5,9 @@ namespace Learning.EventStore.Cache
 {
     public interface ICache
     {
-        bool IsTracked(Guid id);
-        void Set(Guid id, AggregateRoot aggregate);
-        AggregateRoot Get(Guid id);
-        void Remove(Guid id);
+        bool IsTracked(string id);
+        void Set(string id, AggregateRoot aggregate);
+        AggregateRoot Get(string id);
+        void Remove(string id);
     }
 }

@@ -8,9 +8,9 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestAggregateNoParameterLessConstructor : AggregateRoot
     {
-        public TestAggregateNoParameterLessConstructor(int i, Guid? id = null)
+        public TestAggregateNoParameterLessConstructor(int i, string id = null)
         {
-            Id = id ?? Guid.NewGuid();
+            Id = id ?? Guid.NewGuid().ToString();
         }
 
         public void DoSomething()

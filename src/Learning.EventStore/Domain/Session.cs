@@ -8,7 +8,7 @@ namespace Learning.EventStore.Domain
     public class Session : ISession
     {
         private readonly IRepository _repository;
-        private readonly Dictionary<Guid, AggregateDescriptor> _trackedAggregates;
+        private readonly Dictionary<string, AggregateDescriptor> _trackedAggregates;
 
         public Session(IRepository repository)
         {
@@ -18,7 +18,7 @@ namespace Learning.EventStore.Domain
             }
 
             _repository = repository;
-            _trackedAggregates = new Dictionary<Guid, AggregateDescriptor>();
+            _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
         }
 
         public void Add<T>(T aggregate) where T : AggregateRoot
@@ -33,7 +33,7 @@ namespace Learning.EventStore.Domain
             }
         }
 
-        public async Task<T> Get<T>(Guid id, int? expectedVersion = null) where T : AggregateRoot
+        public async Task<T> Get<T>(string id, int? expectedVersion = null) where T : AggregateRoot
         {
             if (IsTracked(id))
             {
@@ -55,7 +55,7 @@ namespace Learning.EventStore.Domain
             return aggregate;
         }
 
-        private bool IsTracked(Guid id)
+        private bool IsTracked(string id)
         {
             return _trackedAggregates.ContainsKey(id);
         }

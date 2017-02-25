@@ -24,7 +24,7 @@ namespace Learning.EventStore.Test.Cache
             _rep1 = new CacheRepository(new Repository(_testStore), _testStore, memoryCache);
             _rep2 = new CacheRepository(new Repository(_testStore), _testStore, memoryCache);
 
-            _aggregate = new TestAggregate(Guid.NewGuid());
+            _aggregate = new TestAggregate(Guid.NewGuid().ToString());
 
             _rep1.Save(_aggregate).Wait();
 

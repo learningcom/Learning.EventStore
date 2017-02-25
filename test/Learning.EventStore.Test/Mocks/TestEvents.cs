@@ -4,13 +4,13 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestAggregateDidSomething : IEvent
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public int Version { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }
     public class TestAggregateDidSomeethingElse : IEvent
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public int Version { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }
@@ -30,7 +30,7 @@ namespace Learning.EventStore.Test.Mocks
 
     public class TestAggregateCreated : IEvent
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public int Version { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }

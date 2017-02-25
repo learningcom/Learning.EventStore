@@ -7,19 +7,19 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestEventStore : IEventStore
     {
-        private readonly Guid _emptyGuid;
+        private readonly string _emptyGuid;
 
         public TestEventStore()
         {
-            _emptyGuid = Guid.NewGuid();
+            _emptyGuid = Guid.NewGuid().ToString();
             SavedEvents = new List<IEvent>();
         }
 
-        public Task<IEnumerable<IEvent>> Get(Guid aggregateId, int version)
+        public Task<IEnumerable<IEvent>> Get(string aggregateId, int version)
         {
             return Task.Run(() =>
             {
-                if (aggregateId == _emptyGuid || aggregateId == Guid.Empty)
+                if (string.IsNullOrEmpty(aggregateId))
                 {
                     return new List<IEvent>();
                 }

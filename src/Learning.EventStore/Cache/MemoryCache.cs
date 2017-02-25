@@ -35,38 +35,38 @@ namespace Learning.EventStore.Cache
 
         }
 
-        public bool IsTracked(Guid id)
+        public bool IsTracked(string id)
         {
             object o;
 #if NET451
-            return _cache.Contains(id.ToString());
+            return _cache.Contains(id);
 #else
             return _cache.TryGetValue(id, out o);
 #endif
         }
 
-        public void Set(Guid id, AggregateRoot aggregate)
+        public void Set(string id, AggregateRoot aggregate)
         {
 #if NET451
-            _cache.Add(id.ToString(), aggregate, _policyFactory.Invoke());
+            _cache.Add(id, aggregate, _policyFactory.Invoke());
 #else
             _cache.Set(id, aggregate, _cacheOptions);
 #endif
         }
 
-        public AggregateRoot Get(Guid id)
+        public AggregateRoot Get(string id)
         {
 #if NET451
-            return (AggregateRoot)_cache.Get(id.ToString());
+            return (AggregateRoot)_cache.Get(id);
 #else
             return (AggregateRoot) _cache.Get(id);
 #endif
         }
 
-        public void Remove(Guid id)
+        public void Remove(string id)
         {
 #if NET451
-            _cache.Remove(id.ToString());
+            _cache.Remove(id);
 #else
             _cache.Remove(id);
 #endif

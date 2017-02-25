@@ -19,7 +19,7 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public void ThrowsIfDifferentObjectWithTrackedGuidIsAdded()
         {
-            var aggregate = new TestAggregate(Guid.NewGuid());
+            var aggregate = new TestAggregate(Guid.NewGuid().ToString());
             var aggregate2 = new TestAggregate(aggregate.Id);
             _session.Add(aggregate);
             Assert.Throws<ConcurrencyException>(() => _session.Add(aggregate2));
@@ -28,7 +28,7 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public void DoesNotThrowIfObjectAlreadyTracked()
         {
-            var aggregate = new TestAggregate(Guid.NewGuid());
+            var aggregate = new TestAggregate(Guid.NewGuid().ToString());
             _session.Add(aggregate);
             _session.Add(aggregate);
         }

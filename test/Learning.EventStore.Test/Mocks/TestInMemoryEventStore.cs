@@ -19,7 +19,7 @@ namespace Learning.EventStore.Test.Mocks
             });
         }
 
-        public async Task<IEnumerable<IEvent>> Get(Guid aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> Get(string aggregateId, int fromVersion)
         {
             return await Task.Run<IEnumerable<IEvent>>(() =>
             {

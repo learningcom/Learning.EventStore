@@ -85,7 +85,7 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public async Task SetsId()
         {
-            var id = Guid.NewGuid();
+            var id = Guid.NewGuid().ToString();
             var agg = new TestAggregateNoParameterLessConstructor(1, id);
             agg.DoSomething();
             _session.Add(agg);
@@ -96,7 +96,7 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public async Task ClearsTrackedAggregates()
         {
-            var agg = new TestAggregate(Guid.NewGuid());
+            var agg = new TestAggregate(Guid.NewGuid().ToString());
             _session.Add(agg);
             agg.DoSomething();
             await _session.Commit();

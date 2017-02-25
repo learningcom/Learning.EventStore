@@ -21,7 +21,7 @@ namespace Learning.EventStore.Test.Mocks
 
         public AggregateRoot Saved { get; private set; }
 
-        public async Task<T> Get<T>(Guid aggregateId) where T : AggregateRoot
+        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
         {
             return await Task.Run<T>(() =>
             {

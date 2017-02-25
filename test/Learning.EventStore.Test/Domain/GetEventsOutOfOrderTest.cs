@@ -20,7 +20,7 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public async Task ThrowsEventsOutOfOrderException()
         {
-            var id = Guid.NewGuid();
+            var id = Guid.NewGuid().ToString();
 
             try
             {
