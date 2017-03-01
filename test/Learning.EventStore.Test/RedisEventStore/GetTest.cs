@@ -35,7 +35,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _redis.HashGetAsync("EventStore:test", 3)).Returns(JsonConvert.SerializeObject(evenList[1], settings));
             A.CallTo(() => _redis.HashGetAsync("EventStore:test", 5)).Returns(JsonConvert.SerializeObject(evenList[2], settings));
 
-            _events = redisEventStore.Get(Guid.Empty.ToString(), 1).Result;
+            _events = redisEventStore.GetAsync(Guid.Empty.ToString(), 1).Result;
         }
 
 

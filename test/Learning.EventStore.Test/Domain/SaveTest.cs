@@ -36,7 +36,7 @@ namespace Learning.EventStore.Test.Domain
         {
             _aggregate.DoSomething();
             _session.Add(_aggregate);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.AreEqual(1, _eventStore.Events.Count);
         }
 
@@ -45,7 +45,7 @@ namespace Learning.EventStore.Test.Domain
         {
             _aggregate.DoSomething();
             _session.Add(_aggregate);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.AreEqual(0, _aggregate.GetUncommittedChanges().Count());
         }
 
@@ -55,7 +55,7 @@ namespace Learning.EventStore.Test.Domain
             var agg = new TestAggregateNoParameterLessConstructor(1);
             agg.DoSomething();
             _session.Add(agg);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.AreEqual(1, _eventStore.Events.Count);
         }
 
@@ -65,7 +65,7 @@ namespace Learning.EventStore.Test.Domain
             var agg = new TestAggregateNoParameterLessConstructor(1);
             agg.DoSomething();
             _session.Add(agg);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.That(_eventStore.Events.First().TimeStamp,
                 Is.InRange(DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1)));
         }
@@ -77,7 +77,7 @@ namespace Learning.EventStore.Test.Domain
             agg.DoSomething();
             agg.DoSomething();
             _session.Add(agg);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.AreEqual(1, _eventStore.Events.First().Version);
             Assert.AreEqual(2, _eventStore.Events.Last().Version);
         }
@@ -89,7 +89,7 @@ namespace Learning.EventStore.Test.Domain
             var agg = new TestAggregateNoParameterLessConstructor(1, id);
             agg.DoSomething();
             _session.Add(agg);
-            await _session.Commit();
+            await _session.CommitAsync();
             Assert.AreEqual(id, _eventStore.Events.First().Id);
         }
 
@@ -99,12 +99,12 @@ namespace Learning.EventStore.Test.Domain
             var agg = new TestAggregate(Guid.NewGuid().ToString());
             _session.Add(agg);
             agg.DoSomething();
-            await _session.Commit();
+            await _session.CommitAsync();
             _eventStore.Events.Clear();
 
             try
             {
-                await _session.Get<TestAggregate>(agg.Id);
+                await _session.GetAsync<TestAggregate>(agg.Id);
                 Assert.Fail();
             }
             catch (AggregateNotFoundException)

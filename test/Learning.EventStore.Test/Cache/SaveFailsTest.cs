@@ -20,7 +20,7 @@ namespace Learning.EventStore.Test.Cache
             _memoryCache = new MemoryCache();
             _testRep = new TestRepository();
             _rep = new CacheRepository(_testRep, new TestInMemoryEventStore(), _memoryCache);
-            _aggregate = _testRep.Get<TestAggregate>(Guid.NewGuid().ToString()).Result;
+            _aggregate = _testRep.GetAsync<TestAggregate>(Guid.NewGuid().ToString()).Result;
             _aggregate.DoSomething();
             
         }
@@ -30,7 +30,7 @@ namespace Learning.EventStore.Test.Cache
         {
             try
             {
-                await _rep.Save(_aggregate, 100);
+                await _rep.SaveAsync(_aggregate, 100);
             }
             catch (Exception) { }
 

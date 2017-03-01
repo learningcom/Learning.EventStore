@@ -16,7 +16,7 @@ namespace Learning.EventStore
             _keyPrefix = keyPrefix;
         }
 
-        public async Task Subscribe<T>(Action<T> callBack)
+        public async Task SubscribeAsync<T>(Action<T> callBack)
         {
             //Register subscriber
             var eventType = typeof(T).Name;
@@ -30,7 +30,7 @@ namespace Learning.EventStore
                 var processingListKey = $"{{{_keyPrefix}:{eventType}}}:ProcessingEvents";
 
                 /*
-                Pop the event out of the queue and and atomicaly push it into another 'processing' list.
+                Pop the event out of the queue and atomicaly push it into another 'processing' list.
                 Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
                 */
                 var eventData = await _redis.ListRightPopLeftPushAsync(listKey, processingListKey).ConfigureAwait(false);

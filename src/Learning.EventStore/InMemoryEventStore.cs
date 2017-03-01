@@ -15,7 +15,7 @@ namespace Learning.EventStore
             _publisher = publisher;
         }
 
-        public async Task Save(IEnumerable<IEvent> events)
+        public async Task SaveAsync(IEnumerable<IEvent> events)
         {
             foreach (var @event in events)
             {
@@ -31,7 +31,7 @@ namespace Learning.EventStore
             }
         }
 
-        public async Task<IEnumerable<IEvent>> Get(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
         {
             return await Task.Run(() =>
             {

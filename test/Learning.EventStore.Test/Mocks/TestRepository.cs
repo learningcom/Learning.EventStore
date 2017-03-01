@@ -7,7 +7,7 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestRepository : IRepository
     {
-        public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
+        public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
             await Task.Run(() =>
             {
@@ -21,7 +21,7 @@ namespace Learning.EventStore.Test.Mocks
 
         public AggregateRoot Saved { get; private set; }
 
-        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
+        public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot
         {
             return await Task.Run<T>(() =>
             {

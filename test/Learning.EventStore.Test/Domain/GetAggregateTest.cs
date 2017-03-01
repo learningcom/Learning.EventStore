@@ -22,14 +22,14 @@ namespace Learning.EventStore.Test.Domain
         [Test]
         public void Should_get_aggregate_from_eventstore()
         {
-            var aggregate = _session.Get<TestAggregate>(Guid.NewGuid().ToString());
+            var aggregate = _session.GetAsync<TestAggregate>(Guid.NewGuid().ToString());
             Assert.NotNull(aggregate);
         }
 
         [Test]
         public async Task AppliesEvents()
         {
-            var aggregate = await _session.Get<TestAggregate>(Guid.NewGuid().ToString());
+            var aggregate = await _session.GetAsync<TestAggregate>(Guid.NewGuid().ToString());
             Assert.AreEqual(2, aggregate.DidSomethingCount);
         }
 
@@ -38,7 +38,7 @@ namespace Learning.EventStore.Test.Domain
         {
             try
             {
-                await _session.Get<TestAggregate>("");
+                await _session.GetAsync<TestAggregate>("");
                 Assert.Fail();
             }
             catch (AggregateNotFoundException)
@@ -52,7 +52,7 @@ namespace Learning.EventStore.Test.Domain
         {
             var agg = new TestAggregate(Guid.NewGuid().ToString());
             _session.Add(agg);
-            var aggregate = await _session.Get<TestAggregate>(agg.Id);
+            var aggregate = await _session.GetAsync<TestAggregate>(agg.Id);
             Assert.AreEqual(agg, aggregate);
         }
 
@@ -60,8 +60,8 @@ namespace Learning.EventStore.Test.Domain
         public async Task GetsFromSessionIfTracked()
         {
             var id = Guid.NewGuid().ToString();
-            var aggregate = await _session.Get<TestAggregate>(id);
-            var aggregate2 = await _session.Get<TestAggregate>(id);
+            var aggregate = await _session.GetAsync<TestAggregate>(id);
+            var aggregate2 = await _session.GetAsync<TestAggregate>(id);
 
             Assert.AreEqual(aggregate, aggregate2);
         }
@@ -70,11 +70,11 @@ namespace Learning.EventStore.Test.Domain
         public async Task ThrowsConcurrencyExceptionIfTracked()
         {
             var id = Guid.NewGuid().ToString();
-            await _session.Get<TestAggregate>(id);
+            await _session.GetAsync<TestAggregate>(id);
 
             try
             {
-                await _session.Get<TestAggregate>(id, 100);
+                await _session.GetAsync<TestAggregate>(id, 100);
                 Assert.Fail();
             }
             catch (ConcurrencyException)
@@ -87,7 +87,7 @@ namespace Learning.EventStore.Test.Domain
         public async Task Should_get_correct_version()
         {
             var id = Guid.NewGuid().ToString();
-            var aggregate = await _session.Get<TestAggregate>(id);
+            var aggregate = await _session.GetAsync<TestAggregate>(id);
 
             Assert.AreEqual(3, aggregate.Version);
         }
@@ -99,7 +99,7 @@ namespace Learning.EventStore.Test.Domain
 
             try
             {
-                await _session.Get<TestAggregate>(id, 1);
+                await _session.GetAsync<TestAggregate>(id, 1);
                 Assert.Fail();
             }
             catch (ConcurrencyException)

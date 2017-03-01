@@ -4,6 +4,6 @@ namespace Learning.EventStore.Messages
 {
     public interface ISubscription
     {
-        Task Subscribe();
+        Task SubscribeAsync();
     }
 }

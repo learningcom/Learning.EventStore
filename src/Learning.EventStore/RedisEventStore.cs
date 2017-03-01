@@ -20,7 +20,7 @@ namespace Learning.EventStore
             _keyPrefix = keyPrefix;
         }
 
-        public async Task<IEnumerable<IEvent>> Get(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
         {
             //Get all the commits for the aggregateId
             var listLength = await _redis.ListLengthAsync($"{{EventStore:{_keyPrefix}}}:{aggregateId}").ConfigureAwait(false);
@@ -43,7 +43,7 @@ namespace Learning.EventStore
             return events;
         }
 
-        public async Task Save(IEnumerable<IEvent> events)
+        public async Task SaveAsync(IEnumerable<IEvent> events)
         {
             var hashKey = $"EventStore:{_keyPrefix}";
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };

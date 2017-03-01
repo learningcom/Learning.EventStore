@@ -34,7 +34,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
                 _callbackData = data;
             };
 
-            subscriber.Subscribe(cb).Wait();
+            subscriber.SubscribeAsync(cb).Wait();
         }
 
         [Test]

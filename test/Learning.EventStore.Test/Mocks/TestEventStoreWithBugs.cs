@@ -7,12 +7,12 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestEventStoreWithBugs : IEventStore
     {
-        public Task Save(IEnumerable<IEvent> events)
+        public Task SaveAsync(IEnumerable<IEvent> events)
         {
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<IEvent>> Get(string aggregateId, int version)
+        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int version)
         {
             return Task.Run<IEnumerable<IEvent>>(() =>
             {

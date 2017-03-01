@@ -20,13 +20,13 @@ namespace Learning.EventStore.Test.Cache
             _memoryCache = new MemoryCache();
             var eventStore = new TestEventStoreWithBugs();
             _cacheRepository = new CacheRepository(new TestRepository(), eventStore, _memoryCache);
-            _aggregate = _cacheRepository.Get<TestAggregate>(Guid.NewGuid().ToString()).Result;
+            _aggregate = _cacheRepository.GetAsync<TestAggregate>(Guid.NewGuid().ToString()).Result;
         }
 
         [Test]
         public async Task EvictsOldObjectFromCache()
         {
-            await _cacheRepository.Get<TestAggregate>(_aggregate.Id);
+            await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
             var newAggregate = _memoryCache.Get(_aggregate.Id);
             Assert.AreNotEqual(_aggregate, newAggregate);
         }
@@ -34,7 +34,7 @@ namespace Learning.EventStore.Test.Cache
         [Test]
         public async Task GetsEventsFromStart()
         {
-            var aggregate = await _cacheRepository.Get<TestAggregate>(_aggregate.Id);
+            var aggregate = await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
             Assert.AreEqual(1, aggregate.Version);
         }
     }

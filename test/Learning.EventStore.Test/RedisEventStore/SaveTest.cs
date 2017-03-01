@@ -35,7 +35,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             _serializedEvent = JsonConvert.SerializeObject(_eventList.First(), settings);
 
-            redisEventStore.Save(_eventList).Wait();
+            redisEventStore.SaveAsync(_eventList).Wait();
         }
 
         [Test]

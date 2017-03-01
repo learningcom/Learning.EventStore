@@ -21,7 +21,7 @@ namespace Learning.EventStore.Test.Domain
             _repository = new Repository(eventStore);
             var aggreagate = new TestAggregateNoParameterLessConstructor(1, _id);
             aggreagate.DoSomething();
-            _repository.Save(aggreagate).Wait();
+            _repository.SaveAsync(aggreagate).Wait();
         }
 
         [Test]
@@ -29,7 +29,7 @@ namespace Learning.EventStore.Test.Domain
         {
             try
             {
-                await _repository.Get<TestAggregateNoParameterLessConstructor>(_id);
+                await _repository.GetAsync<TestAggregateNoParameterLessConstructor>(_id);
                 Assert.Fail();
             }
             catch(MissingParameterLessConstructorException)

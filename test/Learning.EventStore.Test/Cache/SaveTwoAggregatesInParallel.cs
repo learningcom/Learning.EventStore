@@ -23,16 +23,16 @@ namespace Learning.EventStore.Test.Cache
             _aggregate1 = new TestAggregate(Guid.NewGuid().ToString());
             _aggregate2 = new TestAggregate(Guid.NewGuid().ToString());
 
-            _rep1.Save(_aggregate1).Wait();
-            _rep1.Save(_aggregate2).Wait();
+            _rep1.SaveAsync(_aggregate1).Wait();
+            _rep1.SaveAsync(_aggregate2).Wait();
 
             var t1 = new Task(() =>
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep1.Get<TestAggregate>(_aggregate1.Id).Result;
+                    var aggregate = _rep1.GetAsync<TestAggregate>(_aggregate1.Id).Result;
                     aggregate.DoSomething();
-                    _rep1.Save(aggregate).Wait();
+                    _rep1.SaveAsync(aggregate).Wait();
                 }
             });
 
@@ -40,9 +40,9 @@ namespace Learning.EventStore.Test.Cache
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep1.Get<TestAggregate>(_aggregate2.Id).Result;
+                    var aggregate = _rep1.GetAsync<TestAggregate>(_aggregate2.Id).Result;
                     aggregate.DoSomething();
-                    _rep1.Save(aggregate).Wait();
+                    _rep1.SaveAsync(aggregate).Wait();
                 }
             });
             t1.Start();
@@ -66,10 +66,10 @@ namespace Learning.EventStore.Test.Cache
         [Test]
         public async Task DistributesEventsCorrectly()
         {
-            var aggregate1 = await _rep1.Get<TestAggregate>(_aggregate2.Id);
+            var aggregate1 = await _rep1.GetAsync<TestAggregate>(_aggregate2.Id);
             Assert.AreEqual(100, aggregate1.DidSomethingCount);
 
-            var aggregate2 = await _rep1.Get<TestAggregate>(_aggregate2.Id);
+            var aggregate2 = await _rep1.GetAsync<TestAggregate>(_aggregate2.Id);
             Assert.AreEqual(100, aggregate2.DidSomethingCount);
         }
     }

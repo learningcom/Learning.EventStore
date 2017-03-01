@@ -33,7 +33,7 @@ namespace Learning.EventStore.Cache
             _cache = cache;
         }
 
-        public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
+        public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
             try
             {
@@ -43,7 +43,7 @@ namespace Learning.EventStore.Cache
                 {
                     _cache.Set(aggregate.Id, aggregate);
                 }
-                await _repository.Save(aggregate, expectedVersion).ConfigureAwait(false);
+                await _repository.SaveAsync(aggregate, expectedVersion).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -56,7 +56,7 @@ namespace Learning.EventStore.Cache
             }
         }
 
-        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
+        public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot
         {
             try
             {
@@ -66,7 +66,7 @@ namespace Learning.EventStore.Cache
                 if (_cache.IsTracked(aggregateId))
                 {
                     aggregate = (T)_cache.Get(aggregateId);
-                    var events = await _eventStore.Get(aggregateId, aggregate.Version).ConfigureAwait(false);
+                    var events = await _eventStore.GetAsync(aggregateId, aggregate.Version).ConfigureAwait(false);
 
                     if (events.Any() && events.First().Version != aggregate.Version + 1)
                     {
@@ -79,7 +79,7 @@ namespace Learning.EventStore.Cache
                     }
                 }
 
-                aggregate = await _repository.Get<T>(aggregateId).ConfigureAwait(false);
+                aggregate = await _repository.GetAsync<T>(aggregateId).ConfigureAwait(false);
                 _cache.Set(aggregateId, aggregate);
                 return aggregate;
             }

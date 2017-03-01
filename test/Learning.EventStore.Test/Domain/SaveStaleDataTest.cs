@@ -24,7 +24,7 @@ namespace Learning.EventStore.Test.Domain
 
             _aggregate = new TestAggregate(Guid.NewGuid().ToString());
             _aggregate.DoSomething();
-            _rep.Save(_aggregate).Wait();
+            _rep.SaveAsync(_aggregate).Wait();
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace Learning.EventStore.Test.Domain
         {
             try
             {
-                await _rep.Save(_aggregate, 0);
+                await _rep.SaveAsync(_aggregate, 0);
                 Assert.Fail();
             }
             catch (ConcurrencyException)
@@ -46,11 +46,11 @@ namespace Learning.EventStore.Test.Domain
         {
             _session.Add(_aggregate);
             _aggregate.DoSomething();
-            await _rep.Save(_aggregate);
+            await _rep.SaveAsync(_aggregate);
 
             try
             {
-                await _session.Commit();
+                await _session.CommitAsync();
                 Assert.Fail();
             }
             catch (ConcurrencyException)

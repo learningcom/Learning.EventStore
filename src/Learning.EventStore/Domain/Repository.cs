@@ -19,25 +19,25 @@ namespace Learning.EventStore.Domain
             _eventStore = eventStore;
         }
 
-        public async Task Save<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
+        public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
-            if (expectedVersion != null && (await _eventStore.Get(aggregate.Id, expectedVersion.Value).ConfigureAwait(false)).Any())
+            if (expectedVersion != null && (await _eventStore.GetAsync(aggregate.Id, expectedVersion.Value).ConfigureAwait(false)).Any())
             {
                 throw new ConcurrencyException(aggregate.Id);
             }
 
             var changes = aggregate.FlushUncommitedChanges();
-            await _eventStore.Save(changes).ConfigureAwait(false);
+            await _eventStore.SaveAsync(changes).ConfigureAwait(false);
         }
 
-        public async Task<T> Get<T>(string aggregateId) where T : AggregateRoot
+        public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot
         {
-            return await LoadAggregate<T>(aggregateId).ConfigureAwait(false); ;
+            return await LoadAggregateAsync<T>(aggregateId).ConfigureAwait(false); ;
         }
 
-        private async Task<T> LoadAggregate<T>(string id) where T : AggregateRoot
+        private async Task<T> LoadAggregateAsync<T>(string id) where T : AggregateRoot
         {
-            var events = await _eventStore.Get(id, -1).ConfigureAwait(false);
+            var events = await _eventStore.GetAsync(id, -1).ConfigureAwait(false);
             if (!events.Any())
             {
                 throw new AggregateNotFoundException(typeof(T), id);

@@ -15,7 +15,7 @@ namespace Learning.EventStore.Test.Mocks
             SavedEvents = new List<IEvent>();
         }
 
-        public Task<IEnumerable<IEvent>> Get(string aggregateId, int version)
+        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int version)
         {
             return Task.Run(() =>
             {
@@ -33,7 +33,7 @@ namespace Learning.EventStore.Test.Mocks
             });
         }
 
-        public Task Save(IEnumerable<IEvent> events)
+        public Task SaveAsync(IEnumerable<IEvent> events)
         {
             return Task.Run(() =>
             {

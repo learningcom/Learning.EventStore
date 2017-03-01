@@ -18,32 +18,32 @@ namespace Learning.EventStore.Test.Cache
         {
             _testRep = new TestRepository();
             _rep = new CacheRepository(_testRep, new TestInMemoryEventStore(), new MemoryCache());
-            _aggregate = _testRep.Get<TestAggregate>(Guid.NewGuid().ToString()).Result;
+            _aggregate = _testRep.GetAsync<TestAggregate>(Guid.NewGuid().ToString()).Result;
             _aggregate.DoSomething();
         }
 
         [Test]
         public async Task GetsSameAggregateOnGet()
         {
-            await _rep.Save(_aggregate, -1);
-            var aggregate = _rep.Get<TestAggregate>(_aggregate.Id).Result;
+            await _rep.SaveAsync(_aggregate, -1);
+            var aggregate = _rep.GetAsync<TestAggregate>(_aggregate.Id).Result;
             Assert.AreEqual(_aggregate,aggregate);
         }
 
         [Test]
         public async Task SavesToRepository()
         {
-            await _rep.Save(_aggregate, -1);
+            await _rep.SaveAsync(_aggregate, -1);
             Assert.AreEqual(_aggregate.Id, _testRep.Saved.Id);
         }
 
         [Test]
         public async Task DoesNotCacheEmptyId()
         {
-            await _rep.Save(_aggregate, -1);
+            await _rep.SaveAsync(_aggregate, -1);
             var aggregate = new TestAggregate(Guid.Empty.ToString());
-            await _rep.Save(aggregate);
-            Assert.AreNotEqual(aggregate, _rep.Get<TestAggregate>(Guid.Empty.ToString()));
+            await _rep.SaveAsync(aggregate);
+            Assert.AreNotEqual(aggregate, _rep.GetAsync<TestAggregate>(Guid.Empty.ToString()));
         }
     }
 }

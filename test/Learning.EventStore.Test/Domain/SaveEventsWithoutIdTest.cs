@@ -28,7 +28,7 @@ namespace Learning.EventStore.Test.Domain
         {
             try
             {
-                await _rep.Save(_aggregate, 0);
+                await _rep.SaveAsync(_aggregate, 0);
                 Assert.Fail();
             }
             catch (AggregateOrEventMissingIdException)

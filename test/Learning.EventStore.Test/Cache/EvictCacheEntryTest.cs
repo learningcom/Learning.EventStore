@@ -18,7 +18,7 @@ namespace Learning.EventStore.Test.Cache
             _memoryCache = new MemoryCache();
             IEventStore eventStore = new TestEventStore();
             _cacheRepository = new CacheRepository(new TestRepository(), eventStore, _memoryCache);
-            _aggregate = _cacheRepository.Get<TestAggregate>(Guid.NewGuid().ToString().ToString()).Result;
+            _aggregate = _cacheRepository.GetAsync<TestAggregate>(Guid.NewGuid().ToString().ToString()).Result;
         }
 
         [Test]
@@ -26,7 +26,7 @@ namespace Learning.EventStore.Test.Cache
         {
             _memoryCache.Remove(_aggregate.Id);
 
-            var aggregate = await _cacheRepository.Get<TestAggregate>(_aggregate.Id);
+            var aggregate = await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
             Assert.AreNotEqual(_aggregate, aggregate);
         }
     }

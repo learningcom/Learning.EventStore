@@ -26,15 +26,15 @@ namespace Learning.EventStore.Test.Cache
 
             _aggregate = new TestAggregate(Guid.NewGuid().ToString());
 
-            _rep1.Save(_aggregate).Wait();
+            _rep1.SaveAsync(_aggregate).Wait();
 
             var t1 = new Task(() =>
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep1.Get<TestAggregate>(_aggregate.Id).Result;
+                    var aggregate = _rep1.GetAsync<TestAggregate>(_aggregate.Id).Result;
                     aggregate.DoSomething();
-                    _rep1.Save(aggregate).Wait();
+                    _rep1.SaveAsync(aggregate).Wait();
                 }
             });
 
@@ -42,18 +42,18 @@ namespace Learning.EventStore.Test.Cache
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep2.Get<TestAggregate>(_aggregate.Id).Result;
+                    var aggregate = _rep2.GetAsync<TestAggregate>(_aggregate.Id).Result;
                     aggregate.DoSomething();
-                    _rep2.Save(aggregate).Wait();
+                    _rep2.SaveAsync(aggregate).Wait();
                 }
             });
             var t3 = new Task(() =>
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep2.Get<TestAggregate>(_aggregate.Id).Result;
+                    var aggregate = _rep2.GetAsync<TestAggregate>(_aggregate.Id).Result;
                     aggregate.DoSomething();
-                    _rep2.Save(aggregate).Wait();
+                    _rep2.SaveAsync(aggregate).Wait();
                 }
             });
             t1.Start();

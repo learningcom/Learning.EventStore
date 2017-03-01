@@ -24,7 +24,7 @@ namespace Learning.EventStore.Test.Domain
 
             try
             {
-                await _session.Get<TestAggregate>(id, 3);
+                await _session.GetAsync<TestAggregate>(id, 3);
                 Assert.Fail();
             }
             catch (EventsOutOfOrderException)

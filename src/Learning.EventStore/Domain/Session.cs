@@ -33,7 +33,7 @@ namespace Learning.EventStore.Domain
             }
         }
 
-        public async Task<T> Get<T>(string id, int? expectedVersion = null) where T : AggregateRoot
+        public async Task<T> GetAsync<T>(string id, int? expectedVersion = null) where T : AggregateRoot
         {
             if (IsTracked(id))
             {
@@ -45,7 +45,7 @@ namespace Learning.EventStore.Domain
                 return trackedAggregate;
             }
 
-            var aggregate = await _repository.Get<T>(id).ConfigureAwait(false);
+            var aggregate = await _repository.GetAsync<T>(id).ConfigureAwait(false);
             if (expectedVersion != null && aggregate.Version != expectedVersion)
             {
                 throw new ConcurrencyException(id);
@@ -60,11 +60,11 @@ namespace Learning.EventStore.Domain
             return _trackedAggregates.ContainsKey(id);
         }
 
-        public async Task Commit()
+        public async Task CommitAsync()
         {
             foreach (var descriptor in _trackedAggregates.Values)
             {
-                await _repository.Save(descriptor.Aggregate, descriptor.Version).ConfigureAwait(false);
+                await _repository.SaveAsync(descriptor.Aggregate, descriptor.Version).ConfigureAwait(false);
             }
             _trackedAggregates.Clear();
         }
