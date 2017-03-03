@@ -1,6 +1,6 @@
 ﻿{
   "title": "Learning.EventStore",
-  "version": "1.0.0-alpha003",
+  "version": "1.0.0-alpha004",
 
   "dependencies": {
     "NETStandard.Library": "1.6.1",
