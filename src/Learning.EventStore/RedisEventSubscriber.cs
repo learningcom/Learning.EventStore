@@ -24,7 +24,7 @@ namespace Learning.EventStore
             await _redis.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
-            Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
+            async void RedisCallback(RedisChannel channel, RedisValue data)
             {
                 var listKey = $"{{{_keyPrefix}:{eventType}}}:PublishedEvents";
                 var processingListKey = $"{{{_keyPrefix}:{eventType}}}:ProcessingEvents";
@@ -38,13 +38,13 @@ namespace Learning.EventStore
                 //Deserialize the event data and invoke the handler
                 var message = JsonConvert.DeserializeObject<T>(eventData);
                 callBack.Invoke(message);
-                
+
                 //Remove the event from the 'processing' list.
-                await _redis.ListRemoveAsync(processingListKey,eventData).ConfigureAwait(false);
-            };
+                await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);
+            }
 
             //Subscribe to the event
-            await _redis.SubscribeAsync(eventType, redisCallback).ConfigureAwait(false);
+            await _redis.SubscribeAsync(eventType, RedisCallback).ConfigureAwait(false);
         }
     }
 }
