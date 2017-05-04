@@ -1,13 +1,13 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Test.Mocks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Test.RedisEventPublisher
 {
+    [TestClass]
     public class PublishTest
     {
         private readonly IRedisClient _redis;
@@ -30,13 +30,13 @@ namespace Learning.EventStore.Test.RedisEventPublisher
             publisher.Publish(@event).Wait();
         }
 
-        [Test]
+        [TestMethod]
         public void GetsAllSubscribers()
         {
             A.CallTo(() => _redis.SetMembersAsync("Subscribers:TestEvent")).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void AddsMessagesToPublishedEventsListForEachSubscriber()
         {
             A.CallTo(() => _redis.ListRightPushAsync("{Subscriber1:TestEvent}:PublishedEvents", _serializedEvent))
@@ -45,7 +45,7 @@ namespace Learning.EventStore.Test.RedisEventPublisher
                 .MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void PublishesEvents()
         {
             A.CallTo(() => _redis.PublishAsync("TestEvent", true)).MustHaveHappened();

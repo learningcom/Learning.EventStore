@@ -1,12 +1,13 @@
 ﻿using System;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Domain
 {
+    [TestClass]
     public class ReplayEventsTest
     {
-        [Test]
+        [TestMethod]
         public void CallsApplyIfExist()
         {
             var aggregate = new TestAggregate(Guid.NewGuid().ToString());
@@ -14,7 +15,7 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(1, aggregate.DidSomethingCount);
         }
 
-        [Test]
+        [TestMethod]
         public void DoesNotFailApplyIfDoesNotExist()
         {
             var aggregate = new TestAggregate(Guid.NewGuid().ToString());

@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class SaveFailsTest
     {
         private readonly CacheRepository _rep;
@@ -25,7 +24,7 @@ namespace Learning.EventStore.Test.Cache
             
         }
 
-        [Test]
+        [TestMethod]
         public async Task EvictsOldObjectFromCache()
         {
             try
@@ -35,7 +34,7 @@ namespace Learning.EventStore.Test.Cache
             catch (Exception) { }
 
             var aggregate = _memoryCache.Get(_aggregate.Id);
-            Assert.Null(aggregate);
+            Assert.IsNull(aggregate);
         }
     }
 }

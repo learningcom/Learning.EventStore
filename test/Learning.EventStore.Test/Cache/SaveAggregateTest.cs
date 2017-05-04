@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
@@ -22,7 +20,7 @@ namespace Learning.EventStore.Test.Cache
             _aggregate.DoSomething();
         }
 
-        [Test]
+        [TestMethod]
         public async Task GetsSameAggregateOnGet()
         {
             await _rep.SaveAsync(_aggregate, -1);
@@ -30,14 +28,14 @@ namespace Learning.EventStore.Test.Cache
             Assert.AreEqual(_aggregate,aggregate);
         }
 
-        [Test]
+        [TestMethod]
         public async Task SavesToRepository()
         {
             await _rep.SaveAsync(_aggregate, -1);
             Assert.AreEqual(_aggregate.Id, _testRep.Saved.Id);
         }
 
-        [Test]
+        [TestMethod]
         public async Task DoesNotCacheEmptyId()
         {
             await _rep.SaveAsync(_aggregate, -1);

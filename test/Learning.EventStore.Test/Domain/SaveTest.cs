@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Domain
 {
+    [TestClass]
     public class SaveTest
     {
         private readonly TestInMemoryEventStore _eventStore;
@@ -25,13 +25,13 @@ namespace Learning.EventStore.Test.Domain
             _aggregate = new TestAggregateNoParameterLessConstructor(2);
         }
 
-        [SetUp]
+        [TestInitialize]
         public void Setup()
         {
             _eventStore.Events.Clear();
         }
 
-        [Test]
+        [TestMethod]
         public async Task SavesUncommittedChanges()
         {
             _aggregate.DoSomething();
@@ -40,7 +40,7 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(1, _eventStore.Events.Count);
         }
 
-        [Test]
+        [TestMethod]
         public async Task MarksCommittedAfterCommit()
         {
             _aggregate.DoSomething();
@@ -49,7 +49,7 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(0, _aggregate.GetUncommittedChanges().Count());
         }
 
-        [Test]
+        [TestMethod]
         public async Task AddsNewAggregate()
         {
             var agg = new TestAggregateNoParameterLessConstructor(1);
@@ -59,18 +59,18 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(1, _eventStore.Events.Count);
         }
 
-        [Test]
+        [TestMethod]
         public async Task SetsDate()
         {
             var agg = new TestAggregateNoParameterLessConstructor(1);
             agg.DoSomething();
             _session.Add(agg);
             await _session.CommitAsync();
-            Assert.That(_eventStore.Events.First().TimeStamp,
-                Is.InRange(DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1)));
+            Assert.IsTrue(_eventStore.Events.First().TimeStamp >= DateTimeOffset.UtcNow.AddSeconds(-1));
+            Assert.IsTrue(_eventStore.Events.First().TimeStamp <= DateTimeOffset.UtcNow.AddSeconds(1));
         }
 
-        [Test]
+        [TestMethod]
         public async Task SetsVersion()
         {
             var agg = new TestAggregateNoParameterLessConstructor(1);
@@ -82,7 +82,7 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(2, _eventStore.Events.Last().Version);
         }
 
-        [Test]
+        [TestMethod]
         public async Task SetsId()
         {
             var id = Guid.NewGuid().ToString();
@@ -93,7 +93,7 @@ namespace Learning.EventStore.Test.Domain
             Assert.AreEqual(id, _eventStore.Events.First().Id);
         }
 
-        [Test]
+        [TestMethod]
         public async Task ClearsTrackedAggregates()
         {
             var agg = new TestAggregate(Guid.NewGuid().ToString());
@@ -109,7 +109,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (AggregateNotFoundException)
             {
-                Assert.Pass();
+                Assert.IsTrue(true);
             }
         }
     }

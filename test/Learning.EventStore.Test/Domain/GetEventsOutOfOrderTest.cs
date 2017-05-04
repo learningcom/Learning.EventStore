@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Domain
 {
+    [TestClass]
     public class GetEventsOutOfOrderTest
     {
         private readonly ISession _session;
@@ -17,7 +18,7 @@ namespace Learning.EventStore.Test.Domain
             _session = new Session(new Repository(eventStore));
         }
 
-        [Test]
+        [TestMethod]
         public async Task ThrowsEventsOutOfOrderException()
         {
             var id = Guid.NewGuid().ToString();
@@ -29,7 +30,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (EventsOutOfOrderException)
             {
-                Assert.Pass();
+                Assert.IsTrue(true);
             }
         }
     }

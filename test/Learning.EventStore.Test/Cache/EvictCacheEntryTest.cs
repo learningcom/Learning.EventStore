@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class EvictCacheEntryTest
     {
         private readonly IRepository _cacheRepository;
@@ -21,7 +22,7 @@ namespace Learning.EventStore.Test.Cache
             _aggregate = _cacheRepository.GetAsync<TestAggregate>(Guid.NewGuid().ToString().ToString()).Result;
         }
 
-        [Test]
+        [TestMethod]
         public async Task GetsNewAggregateOnNextGetAfterEviction()
         {
             _memoryCache.Remove(_aggregate.Id);

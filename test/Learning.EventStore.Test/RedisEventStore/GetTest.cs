@@ -4,12 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Test.Mocks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Test.RedisEventStore
 {
+    [TestClass]
     public class GetTest
     {
         private readonly IRedisClient _redis;
@@ -39,13 +40,13 @@ namespace Learning.EventStore.Test.RedisEventStore
         }
 
 
-        [Test]
+        [TestMethod]
         public void GetsListLength()
         {
             A.CallTo(() => _redis.ListLengthAsync($"{{EventStore:test}}:{Guid.Empty}")).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void GetsListRange()
         {
             A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 0, 3)).MustHaveHappened();
@@ -58,7 +59,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _redis.HashGetAsync("EventStore:test", 5)).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void ReturnsEventsWithVersionGreaterThanFromVersion()
         {
             Assert.AreEqual(2, _events.Count());

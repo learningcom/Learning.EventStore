@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Domain;
-using NUnit.Framework.Constraints;
 
 namespace Learning.EventStore.Test.Mocks
 {

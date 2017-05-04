@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class SaveSameAggregateInParallelTest
     {
         private readonly CacheRepository _rep1;
@@ -64,13 +64,13 @@ namespace Learning.EventStore.Test.Cache
 
         }
 
-        [Test]
+        [TestMethod]
         public void GetsMoreThanOneEventWithSameId()
         {
             Assert.AreEqual(_testStore.Events.Count, _testStore.Events.Select(x => x.Version).Distinct().Count());
         }
 
-        [Test]
+        [TestMethod]
         public void SavesAllEvents()
         {
             Assert.AreEqual(301, _testStore.Events.Count);

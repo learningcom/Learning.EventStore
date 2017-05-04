@@ -4,10 +4,11 @@ using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class SaveTwoAggregatesInParallel
     {
         private readonly CacheRepository _rep1;
@@ -51,19 +52,19 @@ namespace Learning.EventStore.Test.Cache
             Task.WaitAll(t1, t2);
         }
 
-        [Test]
+        [TestMethod]
         public void DoesNotGetMoreThanOneEventWithSameId()
         {
             Assert.AreEqual(_testStore.Events.Count, _testStore.Events.Select(x => x.Version).Count());
         }
 
-        [Test]
+        [TestMethod]
         public void SavesAllEvents()
         {
             Assert.AreEqual(202, _testStore.Events.Count);
         }
 
-        [Test]
+        [TestMethod]
         public async Task DistributesEventsCorrectly()
         {
             var aggregate1 = await _rep1.GetAsync<TestAggregate>(_aggregate2.Id);

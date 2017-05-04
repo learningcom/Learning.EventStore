@@ -1,12 +1,13 @@
 ﻿using System;
 using FakeItEasy;
 using Learning.EventStore.Test.Mocks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Test.RedisEventSubscriber
 {
+    [TestClass]
     public class SubscribeTest
     {
         private readonly IRedisClient _redis;
@@ -37,25 +38,25 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             subscriber.SubscribeAsync(cb).Wait();
         }
 
-        [Test]
+        [TestMethod]
         public void RegistersAsSubscriber()
         {
             A.CallTo(() => _redis.SetAddAsync("Subscribers:TestEvent", "TestPrefix")).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void ExecutesCallbackWithCorrectData()
         {
             Assert.AreEqual(JsonConvert.SerializeObject(_callbackData), _serializedEvent);
         }
 
-        [Test]
+        [TestMethod]
         public void PopsEventFromPublishedListAndPushesIntoProcessingList()
         {
             A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:TestEvent}:PublishedEvents", "{TestPrefix:TestEvent}:ProcessingEvents")).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void RemovesFromProcessingListUponCompletion()
         {
             A.CallTo(() => _redis.ListRemoveAsync("{TestPrefix:TestEvent}:ProcessingEvents", _serializedEvent))

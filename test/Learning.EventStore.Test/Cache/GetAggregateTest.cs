@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class GetAggregateTest
     {
         private readonly IRepository _cacheRepository;
@@ -23,7 +24,7 @@ namespace Learning.EventStore.Test.Cache
             _aggregate = _cacheRepository.GetAsync<TestAggregate>(Guid.NewGuid().ToString()).Result;
         }
 
-        [Test]
+        [TestMethod]
         public void ReleasesSemaphoreAfterGetIsComplete()
         {
             var property = _cacheRepository.GetType().GetField("SemaphoreSlim", BindingFlags.Static | BindingFlags.NonPublic);
@@ -32,7 +33,7 @@ namespace Learning.EventStore.Test.Cache
             Assert.AreEqual(1, semaphore.CurrentCount);
         }
 
-        [Test]
+        [TestMethod]
         public async Task GetsCachedAggregate()
         {
             var aggregate = await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
@@ -40,14 +41,14 @@ namespace Learning.EventStore.Test.Cache
         }
 
 
-        [Test]
+        [TestMethod]
         public async Task UpdatesIfVersionChangedInEventStore()
         {
             await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
             Assert.AreEqual(3, _aggregate.Version);
         }
 
-        [Test]
+        [TestMethod]
         public async Task GetsSameAggregateFromDifferentCacheRespository()
         {
             var rep = new CacheRepository(new TestRepository(), new TestInMemoryEventStore(), _memoryCache);

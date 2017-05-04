@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NuGet.Packaging;
 
 namespace Learning.EventStore.Test.Mocks
 {
@@ -15,7 +12,10 @@ namespace Learning.EventStore.Test.Mocks
         {
             await Task.Run(() =>
             {
-                Events.AddRange(events);
+                foreach (var @event in events)
+                {
+                    Events.Add(@event);   
+                }
             });
         }
 

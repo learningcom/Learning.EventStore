@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Test.Mocks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Test.RedisEventStore
 {
+    [TestClass]
     public class SaveTest
     {
         private readonly IRedisClient _redis;
@@ -38,37 +38,37 @@ namespace Learning.EventStore.Test.RedisEventStore
             redisEventStore.SaveAsync(_eventList).Wait();
         }
 
-        [Test]
+        [TestMethod]
         public void CreatesTransaction()
         {
             A.CallTo(() => _redis.Database.CreateTransaction(null)).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void ExecutesTransaction()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void GetsHashLength()
         {
             A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void SetsNewHashEntry()
         {
             A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void AddsToCommitList()
         {
             A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened();
         }
 
-        [Test]
+        [TestMethod]
         public void PublishesEvent()
         {
             A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened();

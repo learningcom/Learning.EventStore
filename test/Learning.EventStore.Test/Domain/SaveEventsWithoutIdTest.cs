@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Domain
 {
+    [TestClass]
     public class SaveEventsWithoutIdTest
     {
         private readonly TestInMemoryEventStore _eventStore;
@@ -23,7 +21,7 @@ namespace Learning.EventStore.Test.Domain
             _aggregate = new TestAggregate("");
         }
 
-        [Test]
+        [TestMethod]
         public async Task ThrowAggregateOrEventMissingIdExceptionFromRepository()
         {
             try
@@ -33,7 +31,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (AggregateOrEventMissingIdException)
             {
-                Assert.Pass();
+                Assert.IsTrue(true);
             }
         }
     }

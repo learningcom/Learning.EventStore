@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Cache;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Learning.EventStore.Test.Cache
 {
+    [TestClass]
     public class GetEarlierThanExpectedEventsFromEventStoreTest
     {
         private readonly IRepository _cacheRepository;
@@ -23,7 +22,7 @@ namespace Learning.EventStore.Test.Cache
             _aggregate = _cacheRepository.GetAsync<TestAggregate>(Guid.NewGuid().ToString()).Result;
         }
 
-        [Test]
+        [TestMethod]
         public async Task EvictsOldObjectFromCache()
         {
             await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
@@ -31,7 +30,7 @@ namespace Learning.EventStore.Test.Cache
             Assert.AreNotEqual(_aggregate, newAggregate);
         }
 
-        [Test]
+        [TestMethod]
         public async Task GetsEventsFromStart()
         {
             var aggregate = await _cacheRepository.GetAsync<TestAggregate>(_aggregate.Id);
