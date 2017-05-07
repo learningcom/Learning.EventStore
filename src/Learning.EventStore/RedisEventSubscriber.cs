@@ -25,7 +25,7 @@ namespace Learning.EventStore
             await _redis.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
-            async void RedisCallback(RedisChannel channel, RedisValue data)
+            Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
             {
                 var listKey = $"{{{eventKey}}}:PublishedEvents";
                 var processingListKey = $"{{{eventKey}}}:ProcessingEvents";
@@ -34,7 +34,8 @@ namespace Learning.EventStore
                 Pop the event out of the queue and atomicaly push it into another 'processing' list.
                 Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
                 */
-                var eventData = await _redis.ListRightPopLeftPushAsync(listKey, processingListKey).ConfigureAwait(false);
+                var eventData = await _redis.ListRightPopLeftPushAsync(listKey, processingListKey)
+                    .ConfigureAwait(false);
 
                 // if the eventData is null, then the event has already been processed by another instance, skip further execution
                 if (eventData.HasValue)
@@ -46,11 +47,10 @@ namespace Learning.EventStore
                     //Remove the event from the 'processing' list.
                     await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);
                 }
-
-            }
+            };
 
             //Subscribe to the event
-            await _redis.SubscribeAsync(eventKey, RedisCallback).ConfigureAwait(false);
+            await _redis.SubscribeAsync(eventKey, redisCallback).ConfigureAwait(false);
         }
     }
 }
