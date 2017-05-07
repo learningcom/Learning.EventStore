@@ -16,7 +16,7 @@ namespace Learning.EventStore.Test.RedisEventPublisher
         public PublishTest()
         {
             _redis = A.Fake<IRedisClient>();
-            var publisher = new EventStore.RedisEventPublisher(_redis);
+            var publisher = new EventStore.RedisEventPublisher(_redis, "TestPrefix");
             var @event = new TestEvent();
             var subscriberList = new RedisValue[]
             {
@@ -25,7 +25,7 @@ namespace Learning.EventStore.Test.RedisEventPublisher
             };
             _serializedEvent = JsonConvert.SerializeObject(@event);
 
-            A.CallTo(() => _redis.SetMembersAsync("Subscribers:TestEvent")).Returns(Task.Run(() => subscriberList));
+            A.CallTo(() => _redis.SetMembersAsync("Subscribers:TestPrefix:TestEvent")).Returns(Task.Run(() => subscriberList));
 
             publisher.Publish(@event).Wait();
         }
@@ -33,22 +33,22 @@ namespace Learning.EventStore.Test.RedisEventPublisher
         [TestMethod]
         public void GetsAllSubscribers()
         {
-            A.CallTo(() => _redis.SetMembersAsync("Subscribers:TestEvent")).MustHaveHappened();
+            A.CallTo(() => _redis.SetMembersAsync("Subscribers:TestPrefix:TestEvent")).MustHaveHappened();
         }
 
         [TestMethod]
         public void AddsMessagesToPublishedEventsListForEachSubscriber()
         {
-            A.CallTo(() => _redis.ListRightPushAsync("{Subscriber1:TestEvent}:PublishedEvents", _serializedEvent))
+            A.CallTo(() => _redis.ListRightPushAsync("{Subscriber1:TestPrefix:TestEvent}:PublishedEvents", _serializedEvent))
                 .MustHaveHappened();
-            A.CallTo(() => _redis.ListRightPushAsync("{Subscriber2:TestEvent}:PublishedEvents", _serializedEvent))
+            A.CallTo(() => _redis.ListRightPushAsync("{Subscriber2:TestPrefix:TestEvent}:PublishedEvents", _serializedEvent))
                 .MustHaveHappened();
         }
 
         [TestMethod]
         public void PublishesEvents()
         {
-            A.CallTo(() => _redis.PublishAsync("TestEvent", true)).MustHaveHappened();
+            A.CallTo(() => _redis.PublishAsync("TestPrefix:TestEvent", true)).MustHaveHappened();
         }
 
     }

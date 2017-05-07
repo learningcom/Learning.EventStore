@@ -6,18 +6,21 @@ namespace Learning.EventStore
     public class RedisEventPublisher : IEventPublisher
     {
         private readonly IRedisClient _redis;
+        private readonly string _keyPrefix;
 
-        public RedisEventPublisher(IRedisClient redis)
+        public RedisEventPublisher(IRedisClient redis, string keyPrefix)
         {
             _redis = redis;
+            _keyPrefix = keyPrefix;
         }
 
         public async Task Publish<T>(T @event) where T : IEvent
         {
             var eventType = @event.GetType().Name;
+            var eventKey = $"{_keyPrefix}:{eventType}";
 
             //Get all registered subscribers for this event stored in the Redis set at 'subscriberKey'
-            var subscriberKey = $"Subscribers:{eventType}";
+            var subscriberKey = $"Subscribers:{eventKey}";
             var subscribers = await _redis.SetMembersAsync(subscriberKey).ConfigureAwait(false);
 
             /*
@@ -27,7 +30,7 @@ namespace Learning.EventStore
             foreach (var subscriber in subscribers)
             {
                 var publishMessage = JsonConvert.SerializeObject(@event);
-                var listKey = $"{{{subscriber}:{eventType}}}:PublishedEvents";
+                var listKey = $"{{{subscriber}:{eventKey}}}:PublishedEvents";
 
                 await _redis.ListRightPushAsync(listKey, publishMessage).ConfigureAwait(false);
             }
@@ -36,7 +39,7 @@ namespace Learning.EventStore
             Publish event that notifies subscribers that an item was added to the queue
             All instances will receive the notification, but only one will actually process it since the event can only be popped from the queue once
             */
-            await _redis.PublishAsync(eventType, true).ConfigureAwait(false);
+            await _redis.PublishAsync(eventKey, true).ConfigureAwait(false);
         }
     }
 }

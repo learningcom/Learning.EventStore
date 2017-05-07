@@ -11,7 +11,6 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
     public class SubscribeTest
     {
         private readonly IRedisClient _redis;
-        private readonly TestEvent _testEvent;
         private TestEvent _callbackData;
         private readonly string _serializedEvent;
 
@@ -19,11 +18,11 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         {
             _redis = A.Fake<IRedisClient>();
             var subscriber = new EventStore.RedisEventSubscriber(_redis, "TestPrefix");
-            _testEvent = new TestEvent();
-            _serializedEvent = JsonConvert.SerializeObject(_testEvent);
+            var testEvent = new TestEvent();
+            _serializedEvent = JsonConvert.SerializeObject(testEvent);
 
             A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:TestEvent}:PublishedEvents", "{TestPrefix:TestEvent}:ProcessingEvents")).Returns(_serializedEvent);
-            A.CallTo(() => _redis.SubscribeAsync("TestEvent", A<Action<RedisChannel, RedisValue>>._))
+            A.CallTo(() => _redis.SubscribeAsync("TestPrefix:TestEvent", A<Action<RedisChannel, RedisValue>>._))
                 .Invokes(callObject =>
                 {
                     var action = callObject.Arguments[1] as Action<RedisChannel,RedisValue>;
@@ -41,7 +40,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void RegistersAsSubscriber()
         {
-            A.CallTo(() => _redis.SetAddAsync("Subscribers:TestEvent", "TestPrefix")).MustHaveHappened();
+            A.CallTo(() => _redis.SetAddAsync("Subscribers:TestPrefix:TestEvent", "TestPrefix")).MustHaveHappened();
         }
 
         [TestMethod]
