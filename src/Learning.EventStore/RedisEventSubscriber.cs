@@ -9,26 +9,28 @@ namespace Learning.EventStore
     {
         private readonly IRedisClient _redis;
         private readonly string _keyPrefix;
+        private readonly string _environment;
 
-        public RedisEventSubscriber(IRedisClient redis, string keyPrefix)
+        public RedisEventSubscriber(IRedisClient redis, string keyPrefix, string environment)
         {
             _redis = redis;
             _keyPrefix = keyPrefix;
+            _environment = environment;
         }
 
         public async Task SubscribeAsync<T>(Action<T> callBack)
         {
             //Register subscriber
             var eventType = typeof(T).Name;
-            var eventKey = $"{_keyPrefix}:{eventType}";
+            var eventKey = $"{_environment}:{eventType}";
             var setKey = $"Subscribers:{eventKey}";
             await _redis.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
             Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
             {
-                var listKey = $"{{{eventKey}}}:PublishedEvents";
-                var processingListKey = $"{{{eventKey}}}:ProcessingEvents";
+                var listKey = $"{{{_keyPrefix}:{eventKey}}}:PublishedEvents";
+                var processingListKey = $"{{{_keyPrefix}:{eventKey}}}:ProcessingEvents";
 
                 /*
                 Pop the event out of the queue and atomicaly push it into another 'processing' list.

@@ -6,18 +6,18 @@ namespace Learning.EventStore
     public class RedisEventPublisher : IEventPublisher
     {
         private readonly IRedisClient _redis;
-        private readonly string _keyPrefix;
+        private readonly string _environment;
 
-        public RedisEventPublisher(IRedisClient redis, string keyPrefix)
+        public RedisEventPublisher(IRedisClient redis, string environment)
         {
             _redis = redis;
-            _keyPrefix = keyPrefix;
+            _environment = environment;
         }
 
         public async Task Publish<T>(T @event) where T : IEvent
         {
             var eventType = @event.GetType().Name;
-            var eventKey = $"{_keyPrefix}:{eventType}";
+            var eventKey = $"{_environment}:{eventType}";
 
             //Get all registered subscribers for this event stored in the Redis set at 'subscriberKey'
             var subscriberKey = $"Subscribers:{eventKey}";

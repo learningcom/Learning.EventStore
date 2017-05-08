@@ -17,12 +17,12 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         public SubscribeTest()
         {
             _redis = A.Fake<IRedisClient>();
-            var subscriber = new EventStore.RedisEventSubscriber(_redis, "TestPrefix");
+            var subscriber = new EventStore.RedisEventSubscriber(_redis, "TestPrefix", "Test");
             var testEvent = new TestEvent();
             _serializedEvent = JsonConvert.SerializeObject(testEvent);
 
-            A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:TestEvent}:PublishedEvents", "{TestPrefix:TestEvent}:ProcessingEvents")).Returns(_serializedEvent);
-            A.CallTo(() => _redis.SubscribeAsync("TestPrefix:TestEvent", A<Action<RedisChannel, RedisValue>>._))
+            A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:Test:TestEvent}:PublishedEvents", "{TestPrefix:Test:TestEvent}:ProcessingEvents")).Returns(_serializedEvent);
+            A.CallTo(() => _redis.SubscribeAsync("Test:TestEvent", A<Action<RedisChannel, RedisValue>>._))
                 .Invokes(callObject =>
                 {
                     var action = callObject.Arguments[1] as Action<RedisChannel,RedisValue>;
@@ -40,7 +40,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void RegistersAsSubscriber()
         {
-            A.CallTo(() => _redis.SetAddAsync("Subscribers:TestPrefix:TestEvent", "TestPrefix")).MustHaveHappened();
+            A.CallTo(() => _redis.SetAddAsync("Subscribers:Test:TestEvent", "TestPrefix")).MustHaveHappened();
         }
 
         [TestMethod]
@@ -52,13 +52,13 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void PopsEventFromPublishedListAndPushesIntoProcessingList()
         {
-            A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:TestEvent}:PublishedEvents", "{TestPrefix:TestEvent}:ProcessingEvents")).MustHaveHappened();
+            A.CallTo(() => _redis.ListRightPopLeftPushAsync("{TestPrefix:Test:TestEvent}:PublishedEvents", "{TestPrefix:Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
         }
 
         [TestMethod]
         public void RemovesFromProcessingListUponCompletion()
         {
-            A.CallTo(() => _redis.ListRemoveAsync("{TestPrefix:TestEvent}:ProcessingEvents", _serializedEvent))
+            A.CallTo(() => _redis.ListRemoveAsync("{TestPrefix:Test:TestEvent}:ProcessingEvents", _serializedEvent))
                 .MustHaveHappened();
         }
     }
