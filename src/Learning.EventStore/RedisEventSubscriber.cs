@@ -23,20 +23,20 @@ namespace Learning.EventStore
             //Register subscriber
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
-            var setKey = $"Subscribers:{eventKey}";
-            await _redis.SetAddAsync(setKey, _keyPrefix).ConfigureAwait(false);
+            var subscriberSetKey = $"Subscribers:{eventKey}";
+            var publishedListKey = $"{{{_keyPrefix}:{eventKey}}}:PublishedEvents";
+            await _redis.SetAddAsync(subscriberSetKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
-            Action<RedisChannel, RedisValue> redisCallback = async (channel, data) =>
+            async void RedisCallback(RedisChannel channel, RedisValue data)
             {
-                var listKey = $"{{{_keyPrefix}:{eventKey}}}:PublishedEvents";
                 var processingListKey = $"{{{_keyPrefix}:{eventKey}}}:ProcessingEvents";
 
                 /*
                 Pop the event out of the queue and atomicaly push it into another 'processing' list.
                 Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
                 */
-                var eventData = await _redis.ListRightPopLeftPushAsync(listKey, processingListKey)
+                var eventData = await _redis.ListRightPopLeftPushAsync(publishedListKey, processingListKey)
                     .ConfigureAwait(false);
 
                 // if the eventData is null, then the event has already been processed by another instance, skip further execution
@@ -49,10 +49,22 @@ namespace Learning.EventStore
                     //Remove the event from the 'processing' list.
                     await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);
                 }
-            };
+            }
+
+            //Grab any unprocessed events and process them
+            //Ensures that events that were fired before the application was started will be picked up 
+            var awaitingEvents = await _redis.ListLengthAsync(publishedListKey);
+            if (awaitingEvents > 0)
+            {
+                var events = await _redis.ListRangeAsync(publishedListKey, 0, awaitingEvents);
+                foreach (var @event in events)
+                {
+                    RedisCallback(eventKey, @event);
+                }
+            }
 
             //Subscribe to the event
-            await _redis.SubscribeAsync(eventKey, redisCallback).ConfigureAwait(false);
+            await _redis.SubscribeAsync(eventKey, RedisCallback).ConfigureAwait(false);
         }
     }
 }
