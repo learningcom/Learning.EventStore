@@ -7,11 +7,9 @@ namespace Learning.EventStore.Extensions
 {
     public static class StringExtensions
     {
-        private const int MinCompressionSize = 1000;
-
-        public static string Compress(this string value)
+        public static string Compress(this string value, int compressionThreshold)
         {
-            if (Encoding.UTF8.GetByteCount(value) > MinCompressionSize && !value.IsCompressed())
+            if (Encoding.UTF8.GetByteCount(value) > compressionThreshold && !value.IsCompressed())
             {
                 var bytes = Encoding.UTF8.GetBytes(value);
                 using (var msi = new MemoryStream(bytes))
