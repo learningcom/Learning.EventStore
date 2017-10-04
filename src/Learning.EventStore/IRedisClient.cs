@@ -22,5 +22,8 @@ namespace Learning.EventStore
 
         Task PublishAsync(RedisChannel channel, RedisValue value);
         Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler);
+        Task<string> StringGetAsync(string key);
+        Task<long> StringIncrementAsync(string key);
+        Task<bool> StringSetAsync(string key, string value);
     }
 }
