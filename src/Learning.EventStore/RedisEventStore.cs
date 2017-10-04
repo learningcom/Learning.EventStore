@@ -70,27 +70,11 @@ namespace Learning.EventStore
                     //Create a Redis transaction
                     var tran = _redis.Database.CreateTransaction();
 
-                    var counterKey = $"{hashKey}:Counter";
-                    var counterValue = await _redis.StringGetAsync(counterKey).ConfigureAwait(false);
-                    Task counterSetTask = null;
-                    long commitId;
+                    //Increment the commitId
+                    var commitId = await _redis.HashLengthAsync(hashKey).ConfigureAwait(false) + 1;
 
-                    //this if/else statement is here to transition from using the HashLength to derive the commit ID to using a Redis incrementer. It will be removed in a subsequent version.
-                    if (string.IsNullOrWhiteSpace(counterValue))
-                    {
-                        //Increment the commitId
-                        commitId = await _redis.HashLengthAsync(hashKey).ConfigureAwait(false) + 1;
-                        //Ensure that the hash length has not been changed by another thread between now and when the transaction is committed to avoid commitId collisions
-                        tran.AddCondition(Condition.HashLengthEqual(hashKey, commitId));
-                        counterSetTask = tran.StringSetAsync(counterKey, commitId);
-                    }
-                    else
-                    {
-                        var currentCommit = await _redis.StringGetAsync(counterKey).ConfigureAwait(false);
-                        commitId = await _redis.StringIncrementAsync($"{hashKey}:Counter").ConfigureAwait(false);
-                        //ensure the counter hasn't been changed by another instance between now and when the transaction is committed to avoid commitId collisions
-                        tran.AddCondition(Condition.StringEqual(counterKey, currentCommit));
-                    }
+                    //Ensure that the hash length has not been changed by another thread between now and when the transaction is committed to avoid commitId collisions
+                    tran.AddCondition(Condition.HashLengthEqual(hashKey, commitId - 1));
 
                     //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
                     var hashSetTask = tran.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
@@ -107,10 +91,6 @@ namespace Learning.EventStore
                         await hashSetTask;
                         await listPushTask;
                         await publishTask;
-                        if (counterSetTask != null)
-                        {
-                            await counterSetTask;
-                        }
                         return;
                     }
                 }
