@@ -8,7 +8,7 @@ namespace Learning.EventStore.Infrastructure
     {
         public string KeyPrefix { get; set; }
         public bool EnableCompression { get; set; } = false;
-        public int CompressionThreshold { get; set; }
+        public int CompressionThreshold { get; set; } = 1000;
         public int SaveRetryCount { get; set; } = 10;
     }
 }
