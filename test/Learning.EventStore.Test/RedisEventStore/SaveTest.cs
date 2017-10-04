@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Learning.EventStore.Infrastructure;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -17,6 +19,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         private readonly IEventPublisher _publisher;
         private readonly List<TestEvent> _eventList;
         private readonly string _serializedEvent;
+        private readonly EventStore.RedisEventStore _redisEventStore;
 
         public SaveTest()
         {
@@ -25,53 +28,103 @@ namespace Learning.EventStore.Test.RedisEventStore
             _publisher = A.Fake<IEventPublisher>();
             _eventList = new List<TestEvent> { new TestEvent() };
             var database = A.Fake<IDatabase>();
-            var redisEventStore = new EventStore.RedisEventStore(_redis, _publisher, "test");
+            _redisEventStore = new EventStore.RedisEventStore(_redis, _publisher, "test");
 
-            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             A.CallTo(() => _redis.Database).Returns(database);
             A.CallTo(() => _redis.Database.CreateTransaction(null)).Returns(_trans);
             A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).Returns(Task.Run(() => (long) 2));
-                        
+
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             _serializedEvent = JsonConvert.SerializeObject(_eventList.First(), settings);
-
-            redisEventStore.SaveAsync(_eventList).Wait();
         }
 
         [TestMethod]
-        public void CreatesTransaction()
+        public async Task CreatesTransaction()
         {
-            A.CallTo(() => _redis.Database.CreateTransaction(null)).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _redis.Database.CreateTransaction(null)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
-        public void ExecutesTransaction()
+        public async Task ExecutesTransaction()
         {
-            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
-        public void GetsHashLength()
+        public async Task GetsHashLength()
         {
-            A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
-        public void SetsNewHashEntry()
+        public async Task SetsNewHashEntry()
         {
-            A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
-        public void AddsToCommitList()
+        public async Task AddsToCommitList()
         {
-            A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
-        public void PublishesEvent()
+        public async Task PublishesEvent()
         {
-            A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened();
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            await _redisEventStore.SaveAsync(_eventList);
+
+            A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened(Repeated.Exactly.Once);
+        }
+
+        [TestMethod]
+        public async Task ThrowsExceptionIfSaveTransactionFails()
+        {
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => false));
+
+            try
+            {
+                await _redisEventStore.SaveAsync(_eventList);
+                Assert.Fail("Should have thrown InvalidOperationException");
+            }
+            catch(InvalidOperationException e)
+            {
+                Assert.AreEqual("Failed to save value in key EventStore:test", e.Message);
+                A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened(Repeated.Exactly.Times(10));
+                A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
+                A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
+            }
+        }
+
+        [TestMethod]
+        public void ThrowsArgumentExceptionIfEventStoreSettingsConstructorIsUsedAndKeyPrefixIsNotSet()
+        {
+            var settings = new EventStoreSettings();
+
+            try
+            {
+                new EventStore.RedisEventStore(_redis, _publisher, settings);
+                Assert.Fail("Should have thrown ArgumentException");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("KeyPrefix must be specified in EventStoreSettings", e.Message);
+            }
         }
     }
 }

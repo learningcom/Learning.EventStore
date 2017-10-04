@@ -75,7 +75,7 @@ namespace Learning.EventStore
                     Task counterSetTask = null;
                     long commitId;
 
-                    //this if/else statement is here to transition from using the HashLength to derive the commit ID to using a Redis incrementer in a backward compatible way. It will be removed in a later version.
+                    //this if/else statement is here to transition from using the HashLength to derive the commit ID to using a Redis incrementer. It will be removed in a subsequent version.
                     if (string.IsNullOrWhiteSpace(counterValue))
                     {
                         //Increment the commitId
@@ -88,7 +88,7 @@ namespace Learning.EventStore
                     {
                         var currentCommit = await _redis.StringGetAsync(counterKey).ConfigureAwait(false);
                         commitId = await _redis.StringIncrementAsync($"{hashKey}:Counter").ConfigureAwait(false);
-                        //ensure the counter hasn't been changed by another instance between now and when the transaction is committed
+                        //ensure the counter hasn't been changed by another instance between now and when the transaction is committed to avoid commitId collisions
                         tran.AddCondition(Condition.StringEqual(counterKey, currentCommit));
                     }
 

@@ -54,6 +54,10 @@ namespace Learning.EventStore.Extensions
             {
                 return value;
             }
+            catch (FormatException)
+            {
+                return value;
+            }
         }
 
         public static bool IsCompressed(this string value)
