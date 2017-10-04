@@ -84,5 +84,26 @@ namespace Learning.EventStore
         {
             await Subscriber.SubscribeAsync(channel, handler).ConfigureAwait(false);
         }
+
+        public async Task<string> StringGetAsync(string key)
+        {
+            var result = await Database.StringGetAsync(key);
+
+            return result;
+        }
+
+        public async Task<long> StringIncrementAsync(string key)
+        {
+            var result = await Database.StringIncrementAsync(key);
+
+            return result;
+        }
+
+        public async Task<bool> StringSetAsync(string key, string value)
+        {
+            var result = await Database.StringSetAsync(key, value);
+
+            return result;
+        }
     }
 }
