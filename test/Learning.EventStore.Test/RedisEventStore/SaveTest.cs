@@ -57,21 +57,12 @@ namespace Learning.EventStore.Test.RedisEventStore
         }
 
         [TestMethod]
-        public async Task GetsHashLength()
-        {
-            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
-            await _redisEventStore.SaveAsync(_eventList);
-
-            A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).MustHaveHappened(Repeated.Exactly.Once);
-        }
-
-        [TestMethod]
         public async Task SetsNewHashEntry()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _trans.HashSetAsync("EventStore:test", A<RedisValue>._, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
@@ -80,7 +71,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", A<RedisValue>._, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
@@ -106,8 +97,8 @@ namespace Learning.EventStore.Test.RedisEventStore
             {
                 Assert.AreEqual("Failed to save value in key EventStore:test", e.Message);
                 A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened(Repeated.Exactly.Times(10));
-                A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", "3", When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
-                A.CallTo(() => _trans.HashSetAsync("EventStore:test", 3, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
+                A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", A<RedisValue>._, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
+                A.CallTo(() => _trans.HashSetAsync("EventStore:test", A<RedisValue>._, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
             }
         }
 

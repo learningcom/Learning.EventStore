@@ -71,16 +71,13 @@ namespace Learning.EventStore
                     var tran = _redis.Database.CreateTransaction();
 
                     //Increment the commitId
-                    var commitId = await _redis.HashLengthAsync(hashKey).ConfigureAwait(false) + 1;
-
-                    //Ensure that the hash length has not been changed by another thread between now and when the transaction is committed to avoid commitId collisions
-                    tran.AddCondition(Condition.HashLengthEqual(hashKey, commitId - 1));
+                    var commitId = Guid.NewGuid().ToString();
 
                     //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
                     var hashSetTask = tran.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
 
                     //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
-                    var listPushTask = tran.ListRightPushAsync($"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}", commitId.ToString()).ConfigureAwait(false);
+                    var listPushTask = tran.ListRightPushAsync($"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}", commitId).ConfigureAwait(false);
 
                     //Publish the event
                     var publishTask = _publisher.Publish(@event).ConfigureAwait(false);
