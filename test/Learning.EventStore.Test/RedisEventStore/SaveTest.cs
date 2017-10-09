@@ -95,7 +95,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             }
             catch(InvalidOperationException e)
             {
-                Assert.AreEqual("Failed to save value in key EventStore:test", e.Message);
+                Assert.AreEqual("Failed to save value in key EventStore:test after retrying 10 times", e.Message);
                 A.CallTo(() => _publisher.Publish(A<IEvent>.That.IsSameAs(_eventList.First()))).MustHaveHappened(Repeated.Exactly.Times(10));
                 A.CallTo(() => _trans.ListRightPushAsync($"{{EventStore:test}}:{_eventList.First().Id}", A<RedisValue>._, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
                 A.CallTo(() => _trans.HashSetAsync("EventStore:test", A<RedisValue>._, _serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));

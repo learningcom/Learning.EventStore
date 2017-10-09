@@ -36,20 +36,20 @@ namespace Learning.EventStore
         public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
         {
             //Get all the commits for the aggregateId
-            var listLength = await _redis.ListLengthAsync($"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}").ConfigureAwait(false);
-            var commits = await _redis.ListRangeAsync($"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}", 0, listLength).ConfigureAwait(false);
+            var commits = await _redis.ListRangeAsync($"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}", 0, -1).ConfigureAwait(false);
 
             //Get the event data associated with each commit
-            var commitList = new List<string>();
-            foreach (var commit in commits)
+            var eventTasks = commits.Select(commit =>
             {
-                var hashSetTask = _redis.HashGetAsync($"EventStore:{_settings.KeyPrefix}", commit).ConfigureAwait(false);
-                commitList.Add(await hashSetTask);
-            }
+                var hashGetTask = _redis.HashGetAsync($"EventStore:{_settings.KeyPrefix}", commit);
+                return hashGetTask;
+            });
+            var commitList = await Task.WhenAll(eventTasks).ConfigureAwait(false);
 
             //Get the events that have happened since specified fromVersion
-            var events = commitList.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.Decompress(), JsonSerializerSettings))
+            var events = commitList.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.ToString().Decompress(), JsonSerializerSettings))
                                    .Where(x => x.Version > fromVersion)
+                                   .OrderBy(x => x.Version)
                                    .ToList();
             return events;
         }
@@ -65,7 +65,7 @@ namespace Learning.EventStore
                     ? serializedEvent.Compress(_settings.CompressionThreshold)
                     : serializedEvent;
 
-                for (var i = 0; i < _settings.SaveRetryCount; i++)
+                for (var i = 0; i < _settings.TransactionRetryCount; i++)
                 {
                     //Create a Redis transaction
                     var tran = _redis.Database.CreateTransaction();
@@ -74,10 +74,10 @@ namespace Learning.EventStore
                     var commitId = Guid.NewGuid().ToString();
 
                     //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
-                    var hashSetTask = tran.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
+                    tran.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
 
                     //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
-                    var listPushTask = tran.ListRightPushAsync($"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}", commitId).ConfigureAwait(false);
+                    tran.ListRightPushAsync($"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}", commitId).ConfigureAwait(false);
 
                     //Publish the event
                     var publishTask = _publisher.Publish(@event).ConfigureAwait(false);
@@ -85,14 +85,15 @@ namespace Learning.EventStore
                     //Execute the transaction
                     if (await tran.ExecuteAsync())
                     {
-                        await hashSetTask;
-                        await listPushTask;
                         await publishTask;
                         return;
                     }
+
+                    //Wait before retrying
+                    await Task.Delay(_settings.TransactionRetryDelay); 
                 }
 
-                throw new InvalidOperationException(string.Format($"Failed to save value in key {hashKey}"));
+                throw new InvalidOperationException(string.Format($"Failed to save value in key {hashKey} after retrying {_settings.TransactionRetryCount} times"));
             }
         }
     }
