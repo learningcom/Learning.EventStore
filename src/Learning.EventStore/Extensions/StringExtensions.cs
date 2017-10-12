@@ -31,7 +31,7 @@ namespace Learning.EventStore.Extensions
 
         public static string Decompress(this string value)
         {
-            if (!value.IsCompressed())
+            if (string.IsNullOrWhiteSpace(value) || !value.IsCompressed())
             {
                 return value;
             }

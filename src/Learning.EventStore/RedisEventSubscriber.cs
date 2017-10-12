@@ -24,13 +24,13 @@ namespace Learning.EventStore
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
             var subscriberSetKey = $"Subscribers:{eventKey}";
-            var publishedListKey = $"{{{_keyPrefix}:{eventKey}}}:PublishedEvents";
+            var publishedListKey = $"{_keyPrefix}:{{{eventKey}}}:PublishedEvents";
             await _redis.SetAddAsync(subscriberSetKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
             async void RedisCallback(RedisChannel channel, RedisValue data)
             {
-                var processingListKey = $"{{{_keyPrefix}:{eventKey}}}:ProcessingEvents";
+                var processingListKey = $"{_keyPrefix}:{{{eventKey}}}:ProcessingEvents";
 
                 /*
                 Pop the event out of the queue and atomicaly push it into another 'processing' list.
