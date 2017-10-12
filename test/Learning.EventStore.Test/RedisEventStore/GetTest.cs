@@ -19,8 +19,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         public GetTest()
         {
             _redis = A.Fake<IRedisClient>();
-            var publisher = A.Fake<IEventPublisher>();
-            var redisEventStore = new EventStore.RedisEventStore(_redis, publisher, "test");
+            var redisEventStore = new EventStore.RedisEventStore(_redis, "test", "test");
             var commits = new RedisValue[] {1, 3, 5};
             var evenList = new List<TestEvent>
             {
@@ -46,6 +45,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 0, -1)).MustHaveHappened();
         }
 
+        [TestMethod]
         public void GetsAllEvents()
         {
             A.CallTo(() => _redis.HashGetAsync("EventStore:test", 1)).MustHaveHappened();

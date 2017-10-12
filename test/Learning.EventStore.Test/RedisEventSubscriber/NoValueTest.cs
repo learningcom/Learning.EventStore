@@ -18,7 +18,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             var subscriber = new EventStore.RedisEventSubscriber(redis, "TestPrefix", "Test");
             TestEvent callbackData = null;
 
-            A.CallTo(() => redis.ListRightPopLeftPushAsync("{TestPrefix:Test:TestEvent}:PublishedEvents", "{TestPrefix:Test:TestEvent}:ProcessingEvents")).Returns(RedisValue.Null);
+            A.CallTo(() => redis.ListRightPopLeftPushAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(RedisValue.Null);
             A.CallTo(() => redis.SubscribeAsync("Test:TestEvent", A<Action<RedisChannel, RedisValue>>._))
                 .Invokes(callObject =>
                 {
@@ -33,7 +33,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
 
             subscriber.SubscribeAsync(cb).Wait();
 
-            A.CallTo(() => redis.ListRightPopLeftPushAsync("{TestPrefix:Test:TestEvent}:PublishedEvents", "{TestPrefix:Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
+            A.CallTo(() => redis.ListRightPopLeftPushAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
             Assert.IsNull(callbackData);
         }
     }

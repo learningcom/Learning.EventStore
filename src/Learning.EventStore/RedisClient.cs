@@ -46,6 +46,13 @@ namespace Learning.EventStore
             return hashValue;
         }
 
+        public RedisValue HashGet(RedisKey key, RedisValue value)
+        {
+            var hashValue = Database.HashGet(key, value);
+
+            return hashValue;
+        }
+
         public async Task<long> HashLengthAsync(RedisKey key)
         {
             var length = await Database.HashLengthAsync(key).ConfigureAwait(false);
@@ -87,23 +94,45 @@ namespace Learning.EventStore
 
         public async Task<string> StringGetAsync(string key)
         {
-            var result = await Database.StringGetAsync(key);
+            var result = await Database.StringGetAsync(key).ConfigureAwait(false);
 
             return result;
         }
 
         public async Task<long> StringIncrementAsync(string key)
         {
-            var result = await Database.StringIncrementAsync(key);
+            var result = await Database.StringIncrementAsync(key).ConfigureAwait(false);
 
             return result;
         }
 
         public async Task<bool> StringSetAsync(string key, string value)
         {
-            var result = await Database.StringSetAsync(key, value);
+            var result = await Database.StringSetAsync(key, value).ConfigureAwait(false);
 
             return result;
         }
+
+        public async Task<bool> HashSetAsync(string key, string field, string value)
+        {
+            var result = await Database.HashSetAsync(key, field, value).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task<bool> HashDeleteAsync(string key, string field)
+        {
+            var result = await Database.HashDeleteAsync(key, field).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task<long> ListRemoveAsync(string key, string value, long count)
+        {
+            var result = await Database.ListRemoveAsync(key, value, count).ConfigureAwait(false);
+
+            return result;
+        }
+
     }
 }
