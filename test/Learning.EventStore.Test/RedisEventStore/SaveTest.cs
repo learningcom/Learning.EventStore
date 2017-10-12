@@ -87,9 +87,9 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _trans.ListRightPushAsync("{Subscriber1:test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+            A.CallTo(() => _trans.ListRightPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                 .MustHaveHappened();
-            A.CallTo(() => _trans.ListRightPushAsync("{Subscriber2:test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+            A.CallTo(() => _trans.ListRightPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                 .MustHaveHappened();
         }
 
