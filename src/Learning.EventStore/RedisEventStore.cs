@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -80,43 +79,21 @@ namespace Learning.EventStore
                     //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
                     await _redis.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
 
-                    //Create a Redis transaction
-                    var tran = _redis.Database.CreateTransaction();
+                    var commitListTransaction = _redis.Database.CreateTransaction();
 
                     //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
                     var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}";
-                    tran.ListRightPushAsync(listKey, commitId);
+                    commitListTransaction.ListRightPushAsync(listKey, commitId);
 
                     try
                     {
-                        //Execute the commit list transaction
-                        if (await tran.ExecuteAsync().ConfigureAwait(false))
+                        //Execute the commit list and publish transactions
+                        if (await commitListTransaction.ExecuteAsync().ConfigureAwait(false))
                         {
-                            //Publish the event
-                            var publishTran = await PublishEvent(serializedEvent, @event).ConfigureAwait(false);
-                            for (int j = 0; j < _settings.TransactionRetryCount; j++)
+                            if (await Publish(serializedEvent, @event, listKey, commitId).ConfigureAwait(false))
                             {
-                                try
-                                {
-                                    if (await publishTran.ExecuteAsync().ConfigureAwait(false))
-                                    {
-                                        return;
-                                    }
-                                }
-                                catch
-                                {
-                                    //The publish transaction failed so delete the entry from the commit list
-                                    await _redis.ListRemoveAsync(listKey, commitId, -1).ConfigureAwait(false);
-                                    throw;
-                                }
-
-                                await Task.Delay(_settings.TransactionRetryDelay).ConfigureAwait(false);
+                                return;
                             }
-
-                            //The publish transaction failed so delete the entry from the commit list
-                            await _redis.ListRemoveAsync(listKey, commitId, -1).ConfigureAwait(false);
-
-                            throw new InvalidOperationException(string.Format($"Failed to publish event {hashKey} after retrying {_settings.TransactionRetryCount} times"));
                         }
                     }
                     catch
@@ -136,7 +113,36 @@ namespace Learning.EventStore
             }
         }
 
-        private async Task<ITransaction> PublishEvent(string serializedEvent, IEvent @event)
+        private async Task<bool> Publish(string serializedEvent, IEvent @event, string commitListKey, string commitId)
+        {
+            //Publish the event
+            var publishTran = await GeneratePublishTransaction(serializedEvent, @event).ConfigureAwait(false);
+            for (var j = 0; j < _settings.TransactionRetryCount; j++)
+            {
+                try
+                {
+                    if (await publishTran.ExecuteAsync().ConfigureAwait(false))
+                    {
+                        return true;
+                    }
+                }
+                catch
+                {
+                    //The publish transaction failed so delete the entry from the commit list
+                    await _redis.ListRemoveAsync(commitListKey, commitId, -1).ConfigureAwait(false);
+                    throw;
+                }
+
+                await Task.Delay(_settings.TransactionRetryDelay).ConfigureAwait(false);
+            }
+
+            //The publish transaction failed so delete the entry from the commit list
+            await _redis.ListRemoveAsync(commitListKey, commitId, -1).ConfigureAwait(false);
+
+            throw new InvalidOperationException(string.Format($"Failed to publish event for aggregate {@event.Id} after retrying {_settings.TransactionRetryCount} times"));
+        }
+
+        private async Task<ITransaction> GeneratePublishTransaction(string serializedEvent, IEvent @event)
         {
             var eventType = @event.GetType().Name;
             var eventKey = $"{_environment}:{eventType}";
