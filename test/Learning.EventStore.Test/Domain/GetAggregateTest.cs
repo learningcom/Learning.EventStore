@@ -33,17 +33,10 @@ namespace Learning.EventStore.Test.Domain
         }
 
         [TestMethod]
-        public async Task FailsIfAggregateDoesNotExist()
+        public async Task ReturnsNullIfAggregateDoesNotExist()
         {
-            try
-            {
-                await _session.GetAsync<TestAggregate>("");
-                Assert.Fail();
-            }
-            catch (AggregateNotFoundException)
-            {
-                Assert.IsTrue(true);
-            }
+            var aggregate = await _session.GetAsync<TestAggregate>("");
+            Assert.IsNull(aggregate);
         }
 
         [TestMethod]

@@ -46,6 +46,7 @@ namespace Learning.EventStore.Domain
             }
 
             var aggregate = await _repository.GetAsync<T>(id).ConfigureAwait(false);
+            if (aggregate == null) return null;
             if (expectedVersion != null && aggregate.Version != expectedVersion)
             {
                 throw new ConcurrencyException(id);

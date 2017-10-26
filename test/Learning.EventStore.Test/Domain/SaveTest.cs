@@ -104,8 +104,8 @@ namespace Learning.EventStore.Test.Domain
 
             try
             {
-                await _session.GetAsync<TestAggregate>(agg.Id);
-                Assert.Fail();
+                var result = await _session.GetAsync<TestAggregate>(agg.Id);
+                Assert.IsNull(result);
             }
             catch (AggregateNotFoundException)
             {

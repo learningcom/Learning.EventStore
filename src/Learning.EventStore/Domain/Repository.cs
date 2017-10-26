@@ -40,7 +40,7 @@ namespace Learning.EventStore.Domain
             var events = await _eventStore.GetAsync(id, -1).ConfigureAwait(false);
             if (!events.Any())
             {
-                throw new AggregateNotFoundException(typeof(T), id);
+                return default(T);
             }
 
             var aggregate = AggregateFactory.CreateAggregate<T>();
