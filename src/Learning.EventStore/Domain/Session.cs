@@ -65,7 +65,16 @@ namespace Learning.EventStore.Domain
         {
             foreach (var descriptor in _trackedAggregates.Values)
             {
-                await _repository.SaveAsync(descriptor.Aggregate, descriptor.Version).ConfigureAwait(false);
+                try
+                {
+                    await _repository.SaveAsync(descriptor.Aggregate, descriptor.Version).ConfigureAwait(false);
+                }
+                catch (ConcurrencyException)
+                {
+                    _trackedAggregates.Remove(descriptor.Aggregate.Id);
+                    throw;
+                }
+
             }
             _trackedAggregates.Clear();
         }
