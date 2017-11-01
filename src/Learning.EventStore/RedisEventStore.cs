@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Force.Crc32;
+using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
 using Learning.EventStore.Infrastructure;
 using Newtonsoft.Json;
@@ -64,6 +65,9 @@ namespace Learning.EventStore
         {
             foreach (var @event in events)
             {
+                var hashKeyBase = $"EventStore:{_settings.KeyPrefix}";
+                var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}";
+
                 var serializedEvent = JsonConvert.SerializeObject(@event, JsonSerializerSettings);
                 var eventData = _settings.EnableCompression
                     ? serializedEvent.Compress(_settings.CompressionThreshold)
@@ -71,45 +75,41 @@ namespace Learning.EventStore
 
                 //Generate the commitId
                 var commitId = Guid.NewGuid().ToString();
-                var partition = CalculatePartition(commitId);
-                var hashKey = $"EventStore:{_settings.KeyPrefix}:{partition}";
+                var newPartition = CalculatePartition(commitId);
+                var newHashKey = $"{hashKeyBase}:{newPartition}";
 
-                for (var i = 0; i < _settings.TransactionRetryCount; i++)
+                //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
+                await _redis.HashSetAsync(newHashKey, commitId, eventData).ConfigureAwait(false);
+
+                //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
+                var commitListTransaction = _redis.Database.CreateTransaction();
+                var commitlistLength = await _redis.ListLengthAsync(listKey).ConfigureAwait(false);
+                commitListTransaction.ListRightPushAsync(listKey, commitId).ConfigureAwait(false);
+                commitListTransaction.AddCondition(Condition.ListLengthEqual(listKey, commitlistLength));
+
+                try
                 {
-                    //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
-                    await _redis.HashSetAsync(hashKey, commitId, eventData).ConfigureAwait(false);
-
-                    var commitListTransaction = _redis.Database.CreateTransaction();
-
-                    //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
-                    var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}";
-                    commitListTransaction.ListRightPushAsync(listKey, commitId);
-
-                    try
+                    //Execute the commit list and publish transactions
+                    if (await commitListTransaction.ExecuteAsync().ConfigureAwait(false))
                     {
-                        //Execute the commit list and publish transactions
-                        if (await commitListTransaction.ExecuteAsync().ConfigureAwait(false))
+                        if (await Publish(serializedEvent, @event, listKey, commitId).ConfigureAwait(false))
                         {
-                            if (await Publish(serializedEvent, @event, listKey, commitId).ConfigureAwait(false))
-                            {
-                                return;
-                            }
+                            return;
                         }
                     }
-                    catch
+                    else
                     {
-                        //The commit list push transaction failed so delete the entry from the event store hash
-                        await _redis.HashDeleteAsync(hashKey, commitId).ConfigureAwait(false);
-                        throw;
+                        throw new ConcurrencyException(@event.Id);
                     }
-
-                    await Task.Delay(_settings.TransactionRetryDelay).ConfigureAwait(false);
+                }
+                catch
+                {
+                    //The commit list push transaction failed so delete the entry from the event store hash
+                    await _redis.HashDeleteAsync(newHashKey, commitId).ConfigureAwait(false);
+                    throw;
                 }
 
-                //The commit list push transaction failed so delete the entry from the event store hash
-                await _redis.HashDeleteAsync(hashKey, commitId);
-
-                throw new InvalidOperationException(string.Format($"Failed to save value in key {hashKey} after retrying {_settings.TransactionRetryCount} times"));
+                await Task.Delay(_settings.TransactionRetryDelay).ConfigureAwait(false);
             }
         }
 
