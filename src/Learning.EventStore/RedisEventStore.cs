@@ -40,18 +40,17 @@ namespace Learning.EventStore
         {
             //Get all the commits for the aggregateId
             var commits = await _redis.ListRangeAsync($"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}", 0, -1).ConfigureAwait(false);
-
-            var commitList = new List<RedisValue>();
-            foreach (var commit in commits)
+            
+            //Retrieve event data for each commit
+            var eventTasks = commits.Select(commit =>
             {
                 var partition = CalculatePartition(commit);
                 var hashKeyBase = $"EventStore:{_settings.KeyPrefix}";
 
-                var partitionedValue = await _redis.HashGetAsync($"{hashKeyBase}:{partition}", commit).ConfigureAwait(false);
-                string hashValue = !string.IsNullOrWhiteSpace(partitionedValue) ? partitionedValue : await _redis.HashGetAsync($"{hashKeyBase}", commit).ConfigureAwait(false);
-
-                commitList.Add(hashValue);
-            }
+                var hashGetTask = _redis.HashGetAsync($"{hashKeyBase}:{partition}", commit);
+                return hashGetTask;
+            });
+            var commitList = await Task.WhenAll(eventTasks).ConfigureAwait(false);
 
             //Get the events that have happened since specified fromVersion
             var events = commitList.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.ToString().Decompress(), JsonSerializerSettings))
