@@ -31,9 +31,9 @@ namespace Learning.EventStore.Test.RedisEventStore
 
             A.CallTo(() => _redis.ListLengthAsync($"{{EventStore:test}}:{Guid.Empty}")).Returns(Task.Run(() => (long)3));
             A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 0, -1)).Returns(commits);
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 1)).Returns(JsonConvert.SerializeObject(evenList[0], settings));
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 3)).Returns(JsonConvert.SerializeObject(evenList[1], settings));
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 5)).Returns(JsonConvert.SerializeObject(evenList[2], settings));
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 1)).Returns(JsonConvert.SerializeObject(evenList[0], settings));
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 3)).Returns(JsonConvert.SerializeObject(evenList[1], settings));
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 5)).Returns(JsonConvert.SerializeObject(evenList[2], settings));
 
             _events = redisEventStore.GetAsync(Guid.Empty.ToString(), 1).Result;
         }
@@ -48,9 +48,9 @@ namespace Learning.EventStore.Test.RedisEventStore
         [TestMethod]
         public void GetsAllEvents()
         {
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 1)).MustHaveHappened();
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 3)).MustHaveHappened();
-            A.CallTo(() => _redis.HashGetAsync("EventStore:test", 5)).MustHaveHappened();
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 1)).MustHaveHappened();
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 3)).MustHaveHappened();
+            A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 5)).MustHaveHappened();
         }
 
         [TestMethod]
