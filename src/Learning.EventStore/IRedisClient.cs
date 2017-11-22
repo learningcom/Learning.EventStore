@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 
@@ -23,8 +21,10 @@ namespace Learning.EventStore
         Task PublishAsync(RedisChannel channel, RedisValue value);
         Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler);
         Task<string> StringGetAsync(string key);
-        Task<long> StringIncrementAsync(string key);
-        Task<bool> StringSetAsync(string key, string value);
+        Task<bool> StringSetAsync(string key, string value, TimeSpan? expiry = null);
+        Task<bool> KeyExistsAsync(string key);
+        Task KeyDeleteAsync(string key);
+        Task KeyExpireAsync(string key, TimeSpan expiry);
         Task<bool> HashSetAsync(string key, string field, string value);
         Task<bool> HashDeleteAsync(string key, string field);
         Task<long> ListRemoveAsync(string key, string value, long count);

@@ -11,6 +11,7 @@ namespace Learning.EventStore.Cache
 {
     public class MemoryCache : ICache
     {
+
 #if NET451
         private readonly System.Runtime.Caching.MemoryCache _cache;
         private Func<CacheItemPolicy> _policyFactory;
@@ -18,17 +19,20 @@ namespace Learning.EventStore.Cache
         private readonly MemoryCacheEntryOptions _cacheOptions;
         private readonly IMemoryCache _cache;
 #endif
-
         public MemoryCache()
+            :this(15)
         {
+        }
 
+        public MemoryCache(int expiry)
+        {
 #if NET451
             _cache = System.Runtime.Caching.MemoryCache.Default;
             _policyFactory = () => new CacheItemPolicy();
 #else
             _cacheOptions = new MemoryCacheEntryOptions
             {
-                SlidingExpiration = TimeSpan.FromMinutes(15)
+                SlidingExpiration = TimeSpan.FromMinutes(expiry)
             };
             _cache = new Microsoft.Extensions.Caching.Memory.MemoryCache(new MemoryCacheOptions());
 #endif

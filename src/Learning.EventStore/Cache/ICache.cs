@@ -1,5 +1,4 @@
-﻿using System;
-using Learning.EventStore.Domain;
+﻿using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Cache
 {

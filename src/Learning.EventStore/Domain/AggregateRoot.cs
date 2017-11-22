@@ -9,8 +9,8 @@ namespace Learning.EventStore.Domain
     {
         private readonly List<IEvent> _changes = new List<IEvent>();
 
-        public string Id { get; protected set; }
-        public int Version { get; protected set; }
+        public string Id { get; set; }
+        public int Version { get; set; }
 
         public IEnumerable<IEvent> GetUncommittedChanges()
         {

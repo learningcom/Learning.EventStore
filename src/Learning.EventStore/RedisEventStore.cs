@@ -38,8 +38,10 @@ namespace Learning.EventStore
 
         public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
         {
-            //Get all the commits for the aggregateId
-            var commits = await _redis.ListRangeAsync($"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}", 0, -1).ConfigureAwait(false);
+            //Get all the commits for the aggregateId that have happened since specified fromVersion
+            var rangeStart = fromVersion < 0 ? 0 : fromVersion;
+            var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}";
+            var commits = await _redis.ListRangeAsync(listKey, rangeStart, -1).ConfigureAwait(false);
             
             //Retrieve event data for each commit
             var eventTasks = commits.Select(commit =>
@@ -52,9 +54,8 @@ namespace Learning.EventStore
             });
             var commitList = await Task.WhenAll(eventTasks).ConfigureAwait(false);
 
-            //Get the events that have happened since specified fromVersion
+            //Get the events
             var events = commitList.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.ToString().Decompress(), JsonSerializerSettings))
-                                   .Where(x => x.Version > fromVersion)
                                    .OrderBy(x => x.Version)
                                    .ToList();
             return events;
