@@ -99,18 +99,28 @@ namespace Learning.EventStore
             return result;
         }
 
-        public async Task<long> StringIncrementAsync(string key)
+        public async Task<bool> StringSetAsync(string key, string value, TimeSpan? expiry = null)
         {
-            var result = await Database.StringIncrementAsync(key).ConfigureAwait(false);
+            var result = await Database.StringSetAsync(key, value, expiry).ConfigureAwait(false);
 
             return result;
         }
 
-        public async Task<bool> StringSetAsync(string key, string value)
+        public async Task KeyDeleteAsync(string key)
         {
-            var result = await Database.StringSetAsync(key, value).ConfigureAwait(false);
+            await Database.KeyDeleteAsync(key);
+        }
+
+        public async Task<bool> KeyExistsAsync(string key)
+        {
+            var result = await Database.KeyExistsAsync(key).ConfigureAwait(false);
 
             return result;
+        }
+
+        public async Task KeyExpireAsync(string key, TimeSpan expiry)
+        {
+            await Database.KeyExpireAsync(key, expiry);
         }
 
         public async Task<bool> HashSetAsync(string key, string field, string value)
