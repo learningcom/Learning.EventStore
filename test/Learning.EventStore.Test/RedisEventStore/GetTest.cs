@@ -30,7 +30,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
             A.CallTo(() => _redis.ListLengthAsync($"{{EventStore:test}}:{Guid.Empty}")).Returns(Task.Run(() => (long)3));
-            A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 0, -1)).Returns(commits);
+            A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 1, -1)).Returns(commits);
             A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 1)).Returns(JsonConvert.SerializeObject(evenList[0], settings));
             A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 3)).Returns(JsonConvert.SerializeObject(evenList[1], settings));
             A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 5)).Returns(JsonConvert.SerializeObject(evenList[2], settings));
@@ -42,7 +42,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         [TestMethod]
         public void GetsListRange()
         {
-            A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 0, -1)).MustHaveHappened();
+            A.CallTo(() => _redis.ListRangeAsync($"{{EventStore:test}}:{Guid.Empty}", 1, -1)).MustHaveHappened();
         }
 
         [TestMethod]
@@ -56,9 +56,10 @@ namespace Learning.EventStore.Test.RedisEventStore
         [TestMethod]
         public void ReturnsEventsWithVersionGreaterThanFromVersion()
         {
-            Assert.AreEqual(2, _events.Count());
-            Assert.AreEqual(2, _events.ToList()[0].Version);
-            Assert.AreEqual(3, _events.ToList()[1].Version);
+            Assert.AreEqual(3, _events.Count());
+            Assert.AreEqual(1, _events.ToList()[0].Version);
+            Assert.AreEqual(2, _events.ToList()[1].Version);
+            Assert.AreEqual(3, _events.ToList()[2].Version);
         }
     }
 }

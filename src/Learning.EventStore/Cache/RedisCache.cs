@@ -43,14 +43,20 @@ namespace Learning.EventStore.Cache
             {
                 return memoryCacheValue;
             }
+
             var serializedAggregateRoot = _redis.StringGetAsync(id).Result;
-            _redis.KeyExpireAsync(id, TimeSpan.FromMinutes(_expiry)).Wait();
+            if (!string.IsNullOrEmpty(serializedAggregateRoot))
+            {
+                _redis.KeyExpireAsync(id, TimeSpan.FromMinutes(_expiry)).Wait();
 
-            var deserializedAggregateRoot = JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
+                var deserializedAggregateRoot = JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
 
-            _memoryCache.Set(id, deserializedAggregateRoot);
+                _memoryCache.Set(id, deserializedAggregateRoot);
 
-            return deserializedAggregateRoot;
+                return deserializedAggregateRoot;
+            }
+
+            return null;
         }
 
         public void Remove(string id)
