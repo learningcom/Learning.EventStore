@@ -31,15 +31,20 @@ namespace Learning.EventStore.Cache
         public bool IsTracked(string id)
         {
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            return _memoryCache.IsTracked(cacheKey) || _redis.KeyExistsAsync(cacheKey).Result;
+            var inMemoryCache = _memoryCache.IsTracked(cacheKey);
+            var inRedisCache = _redis.KeyExistsAsync(cacheKey).Result;
+            return inMemoryCache || inRedisCache;
         }
 
         public void Set(string id, AggregateRoot aggregate)
         {
-            var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            var serializedAggregateRoot = JsonConvert.SerializeObject(aggregate, JsonSerializerSettings);
-            _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry)).Wait();
-            _memoryCache.Set(cacheKey, aggregate);
+            if (aggregate != null)
+            {
+                var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
+                var serializedAggregateRoot = JsonConvert.SerializeObject(aggregate, JsonSerializerSettings);
+                _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry)).Wait();
+                _memoryCache.Set(cacheKey, aggregate);
+            }
         }
 
         public AggregateRoot Get(string id)
