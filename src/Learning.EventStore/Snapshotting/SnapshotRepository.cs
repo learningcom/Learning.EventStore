@@ -39,14 +39,14 @@ namespace Learning.EventStore.Snapshotting
         public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot
         {
             var aggregate = AggregateFactory.CreateAggregate<T>();
-            var snapshotVersion = await TryRestoreAggregateFromSnapshot(aggregateId, aggregate);
+            var snapshotVersion = await TryRestoreAggregateFromSnapshot(aggregateId, aggregate).ConfigureAwait(false);
 
             if (snapshotVersion == -1)
             {
-                return await _repository.GetAsync<T>(aggregateId);
+                return await _repository.GetAsync<T>(aggregateId).ConfigureAwait(false);
             }
 
-            var events = (await _eventStore.GetAsync(aggregateId, snapshotVersion)).Where(desc => desc.Version > snapshotVersion);
+            var events = (await _eventStore.GetAsync(aggregateId, snapshotVersion).ConfigureAwait(false)).Where(desc => desc.Version > snapshotVersion);
             aggregate.LoadFromHistory(events);
 
             return aggregate;
@@ -59,7 +59,7 @@ namespace Learning.EventStore.Snapshotting
                 return -1;
             }
                 
-            var snapshot = await _snapshotStore.GetAsync(id);
+            var snapshot = await _snapshotStore.GetAsync(id).ConfigureAwait(false);
             if (snapshot == null)
             {
                 return -1;
