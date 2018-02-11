@@ -17,10 +17,18 @@ namespace Learning.EventStore.Test.Mocks
         public Task SaveAsync(Snapshot snapshot)
         {
             if (snapshot.Version == 0)
+            {
                 FirstSaved = true;
+            }
+                
             SavedVersion = snapshot.Version;
             _snapshot = snapshot;
             return Task.CompletedTask;
+        }
+
+        public Task<bool> ExistsAsync(string id)
+        {
+            return Task.FromResult(_snapshot != null);
         }
 
         private Snapshot _snapshot;

@@ -11,7 +11,14 @@ namespace Learning.EventStore.Test.Mocks
     {
         public bool VerifyGet { get; private set; }
         public bool VerifySave { get; private set; }
+        public bool VerifyExists { get; private set; }
         public int SavedVersion { get; private set; }
+
+        public Task<bool> ExistsAsync(string id)
+        {
+            VerifyExists = true;
+            return Task.FromResult(false);
+        }
 
         public Task<Snapshot> GetAsync(string id)
         {

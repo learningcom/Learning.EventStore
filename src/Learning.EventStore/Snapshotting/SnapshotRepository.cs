@@ -31,9 +31,9 @@ namespace Learning.EventStore.Snapshotting
             _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
         }
 
-        public Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
+        public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
-            return Task.WhenAll(TryMakeSnapshot(aggregate), _repository.SaveAsync(aggregate, expectedVersion));
+            await Task.WhenAll(TryMakeSnapshot(aggregate), _repository.SaveAsync(aggregate, expectedVersion)).ConfigureAwait(false);
         }
 
         public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot

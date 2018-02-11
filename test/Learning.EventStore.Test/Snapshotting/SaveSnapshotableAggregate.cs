@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Snapshotting;
 using Learning.EventStore.Test.Mocks;
@@ -19,7 +15,7 @@ namespace Learning.EventStore.Test.Snapshotting
         {
             var eventStore = new TestInMemoryEventStore();
             _snapshotStore = new TestSnapshotStore();
-            var snapshotStrategy = new DefaultSnapshotStrategy();
+            var snapshotStrategy = new DefaultSnapshotStrategy(_snapshotStore);
             var repository = new SnapshotRepository(_snapshotStore, snapshotStrategy, new Repository(eventStore),
                 eventStore);
             var session = new Session(repository);

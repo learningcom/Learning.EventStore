@@ -49,7 +49,7 @@ namespace Learning.EventStore.Snapshotting
             var i = aggregate.Version;
             for (var j = 0; j < aggregate.GetUncommittedChanges().Length; j++)
             {
-                if (i != 0 && ++i % _snapshotInterval == 0)
+                if (++i % _snapshotInterval == 0 && i != 0)
                 {
                     return true;
                 }

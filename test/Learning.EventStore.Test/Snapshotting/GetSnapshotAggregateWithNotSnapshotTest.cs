@@ -16,7 +16,7 @@ namespace Learning.EventStore.Test.Snapshotting
         {
             var eventStore = new TestEventStore();
             var snapshotStore = new NullSnapshotStore();
-            var snapshotStrategy = new DefaultSnapshotStrategy();
+            var snapshotStrategy = new DefaultSnapshotStrategy(snapshotStore);
             var repository = new SnapshotRepository(snapshotStore, snapshotStrategy, new Repository(eventStore), eventStore);
             var session = new Session(repository);
             _aggregate = session.GetAsync<TestSnapshotAggregate>(Guid.NewGuid().ToString()).Result;
@@ -24,6 +24,11 @@ namespace Learning.EventStore.Test.Snapshotting
 
         private class NullSnapshotStore : ISnapshotStore
         {
+            public Task<bool> ExistsAsync(string id)
+            {
+                return Task.FromResult(true);
+            }
+
             public Task<Snapshot> GetAsync(string id)
             {
                 return Task.FromResult<Snapshot>(null);
