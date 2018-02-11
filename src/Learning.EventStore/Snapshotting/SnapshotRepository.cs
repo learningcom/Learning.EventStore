@@ -69,16 +69,16 @@ namespace Learning.EventStore.Snapshotting
             return snapshot.Version;
         }
 
-        private Task TryMakeSnapshot(AggregateRoot aggregate)
+        private async Task TryMakeSnapshot(AggregateRoot aggregate)
         {
-            if (!_snapshotStrategy.ShouldMakeSnapShot(aggregate))
+            if (!await _snapshotStrategy.ShouldMakeSnapShot(aggregate).ConfigureAwait(false))
             {
-                return Task.FromResult(0);
+                return;
             }
                 
             dynamic snapshot = aggregate.Invoke("GetSnapshot");
             snapshot.Version = aggregate.Version + aggregate.GetUncommittedChanges().Length;
-            return _snapshotStore.SaveAsync(snapshot);
+            await _snapshotStore.SaveAsync(snapshot).ConfigureAwait(false);
         }
     }
 }

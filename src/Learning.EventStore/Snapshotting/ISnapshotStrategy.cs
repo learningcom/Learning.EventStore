@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Snapshotting
@@ -13,7 +14,7 @@ namespace Learning.EventStore.Snapshotting
         /// </summary>
         /// <param name="aggregate">Aggregate to be taken snapshot of</param>
         /// <returns>If snapshot should be taken</returns>
-        bool ShouldMakeSnapShot(AggregateRoot aggregate);
+        Task<bool> ShouldMakeSnapShot(AggregateRoot aggregate);
 
         /// <summary>
         /// Check if aggregate should be taken snapshot of

@@ -30,11 +30,24 @@ namespace Learning.EventStore.Snapshotting
             _hashKeyBase = $"Snapshots:{_settings.KeyPrefix}";
         }
 
-        public async Task<Snapshot> GetAsync(string id)
+        public async Task<bool> ExistsAsync(string id)
         {
             var partition = id.CalculatePartition();
+            var exists = await _redis.HashExistsAsync($"{_hashKeyBase}:{partition}", id).ConfigureAwait(false);
+
+            return exists;
+        }
+
+        public async Task<Snapshot> GetAsync(string id)
+        {
+            Snapshot snapshot = null;
+            var partition = id.CalculatePartition();
             var serializedSnapshot = await _redis.HashGetAsync($"{_hashKeyBase}:{partition}", id);
-            var snapshot = JsonConvert.DeserializeObject<Snapshot>(serializedSnapshot.ToString().Decompress(), JsonSerializerSettings);
+
+            if (!string.IsNullOrEmpty(serializedSnapshot))
+            {
+                snapshot = JsonConvert.DeserializeObject<Snapshot>(serializedSnapshot.ToString().Decompress(), JsonSerializerSettings);
+            }
 
             return snapshot;
         }

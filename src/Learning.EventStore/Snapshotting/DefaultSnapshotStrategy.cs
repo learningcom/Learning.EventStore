@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
+using System.Threading.Tasks;
 using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Snapshotting
@@ -14,10 +13,12 @@ namespace Learning.EventStore.Snapshotting
     public class DefaultSnapshotStrategy : ISnapshotStrategy
     {
         private readonly int _snapshotInterval;
+        private readonly ISnapshotStore _snapshotStore;
 
-        public DefaultSnapshotStrategy(int snapshotInterval = 100)
+        public DefaultSnapshotStrategy(ISnapshotStore snapshotStore, int snapshotInterval = 100)
         {
             _snapshotInterval = snapshotInterval;
+            _snapshotStore = snapshotStore;
         }
 
         public bool IsSnapshotable(Type aggregateType)
@@ -38,7 +39,7 @@ namespace Learning.EventStore.Snapshotting
             }
         }
 
-        public bool ShouldMakeSnapShot(AggregateRoot aggregate)
+        public async Task<bool> ShouldMakeSnapShot(AggregateRoot aggregate)
         {
             if (!IsSnapshotable(aggregate.GetType()))
             {
@@ -48,10 +49,15 @@ namespace Learning.EventStore.Snapshotting
             var i = aggregate.Version;
             for (var j = 0; j < aggregate.GetUncommittedChanges().Length; j++)
             {
-                if (++i % _snapshotInterval == 0 && i != 0)
+                if (i != 0 && ++i % _snapshotInterval == 0)
                 {
                     return true;
-                }  
+                }
+
+                if (i >= _snapshotInterval && !await _snapshotStore.ExistsAsync(aggregate.Id).ConfigureAwait(false))
+                {
+                    return true;
+                }
             }
                 
             return false;

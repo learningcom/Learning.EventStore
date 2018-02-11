@@ -8,6 +8,13 @@ namespace Learning.EventStore.Snapshotting
     public interface ISnapshotStore
     {
         /// <summary>
+        /// Check for an existing snapshot
+        /// </summary>
+        /// <param name="id">Id of aggregate</param>
+        /// <returns>Task with bool indicating whether or not the snapshot exists</returns>
+        Task<bool> ExistsAsync(string id);
+
+        /// <summary>
         /// Get snapshot from store
         /// </summary>
         /// <param name="id">Id of aggregate</param>
