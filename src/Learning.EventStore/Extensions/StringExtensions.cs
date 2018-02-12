@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using Force.Crc32;
 
 namespace Learning.EventStore.Extensions
 {
@@ -65,6 +66,15 @@ namespace Learning.EventStore.Extensions
             //Check for the Base64 encoded Gzip header
             const string gzipHeader = "H4sI";
             return value.Substring(0, 4) == gzipHeader;
+        }
+
+        public static string CalculatePartition(this string commitId)
+        {
+            var bytes = Encoding.UTF8.GetBytes(commitId);
+            var hash = Crc32Algorithm.Compute(bytes);
+            var partition = hash % 655360;
+
+            return partition.ToString();
         }
     }
 }

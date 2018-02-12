@@ -27,6 +27,7 @@ namespace Learning.EventStore
         Task KeyExpireAsync(string key, TimeSpan expiry);
         Task<bool> HashSetAsync(string key, string field, string value);
         Task<bool> HashDeleteAsync(string key, string field);
+        Task<bool> HashExistsAsync(string key, string field);
         Task<long> ListRemoveAsync(string key, string value, long count);
     }
 }

@@ -12,7 +12,7 @@ namespace Learning.EventStore.Domain
         public string Id { get; set; }
         public int Version { get; set; }
 
-        public IEnumerable<IEvent> GetUncommittedChanges()
+        public IEvent[] GetUncommittedChanges()
         {
             lock (_changes)
             {
@@ -48,36 +48,39 @@ namespace Learning.EventStore.Domain
 
         public void LoadFromHistory(IEnumerable<IEvent> history)
         {
-            foreach (var e in history)
+            lock (_changes)
             {
-                if (e.Version != Version + 1)
+                foreach (var e in history)
                 {
-                    throw new EventsOutOfOrderException(e.Id);
+                    if (e.Version != Version + 1)
+                    {
+                        throw new EventsOutOfOrderException(e.Id);
+                    }
+                    ApplyEvent(e);
+                    Id = e.Id;
+                    Version++;
                 }
-                ApplyChange(e, false);
             }
         }
 
         protected void ApplyChange(IEvent @event)
         {
-            ApplyChange(@event, true);
-        }
-
-        private void ApplyChange(IEvent @event, bool isNew)
-        {
             lock (_changes)
             {
-                this.AsDynamic().Apply(@event);
-                if (isNew)
-                {
-                    _changes.Add(@event);
-                }
-                else
-                {
-                    Id = @event.Id;
-                    Version++;
-                }
+                ApplyEvent(@event);
+                _changes.Add(@event);
             }
+        }
+
+        /// <summary>
+        /// Overrideable method for applying events on aggregate
+        /// This is called interally when rehydrating aggregates.
+        /// Can be overridden if you want custom handling.
+        /// </summary>
+        /// <param name="event">Event to apply</param>
+        protected virtual void ApplyEvent(IEvent @event)
+        {
+            this.Invoke("Apply", @event);
         }
     }
 }

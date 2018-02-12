@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Force.Crc32;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
 using Learning.EventStore.Infrastructure;
@@ -46,7 +44,7 @@ namespace Learning.EventStore
             //Retrieve event data for each commit
             var eventTasks = commits.Select(commit =>
             {
-                var partition = CalculatePartition(commit);
+                var partition = commit.ToString().CalculatePartition();
                 var hashKeyBase = $"EventStore:{_settings.KeyPrefix}";
 
                 var hashGetTask = _redis.HashGetAsync($"{hashKeyBase}:{partition}", commit);
@@ -75,7 +73,7 @@ namespace Learning.EventStore
 
                 //Generate the commitId
                 var commitId = Guid.NewGuid().ToString();
-                var newPartition = CalculatePartition(commitId);
+                var newPartition = commitId.CalculatePartition();
                 var newHashKey = $"{hashKeyBase}:{newPartition}";
 
                 //Write event data to a field named {commitId} in EventStore hash. Allows for fast lookup O(1) of individual events
@@ -174,16 +172,6 @@ namespace Learning.EventStore
 
             return tran;
         }
-
-        private static string CalculatePartition(string commitId)
-        {
-            var bytes = Encoding.UTF8.GetBytes(commitId);
-            var hash = Crc32Algorithm.Compute(bytes);
-            var partition = hash % 655360;
-
-            return partition.ToString();
-        }
-
     }
 }
     

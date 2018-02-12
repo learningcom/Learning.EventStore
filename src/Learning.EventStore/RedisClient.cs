@@ -137,6 +137,13 @@ namespace Learning.EventStore
             return result;
         }
 
+        public async Task<bool> HashExistsAsync(string key, string field)
+        {
+            var result = await Database.HashExistsAsync(key, field);
+
+            return result;
+        }
+
         public async Task<long> ListRemoveAsync(string key, string value, long count)
         {
             var result = await Database.ListRemoveAsync(key, value, count).ConfigureAwait(false);
