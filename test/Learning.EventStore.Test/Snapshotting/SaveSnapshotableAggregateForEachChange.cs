@@ -34,7 +34,7 @@ namespace Learning.EventStore.Test.Snapshotting
         }
 
         [TestMethod]
-        public void ShouldSnapshost100thChange()
+        public void ShouldSnapshot100thChange()
         {
             Assert.AreEqual(100, _snapshotStore.SavedVersion);
         }
