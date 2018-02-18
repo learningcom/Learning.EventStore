@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Learning.EventStore.Messages;
+﻿using System.Threading.Tasks;
+using Learning.MessageQueue.Messages;
 
-namespace Learning.EventStore.MessageQueue
+namespace Learning.MessageQueue
 {
     public interface IMessageQueue
     {

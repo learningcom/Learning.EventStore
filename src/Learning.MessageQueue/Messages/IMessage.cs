@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Learning.EventStore.Messages
+namespace Learning.MessageQueue.Messages
 {
     public interface IMessage
     {

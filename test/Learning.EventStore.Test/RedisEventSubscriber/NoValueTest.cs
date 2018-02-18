@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using FakeItEasy;
+using Learning.EventStore.Common;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StackExchange.Redis;
@@ -15,7 +14,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         public void DoesNotThrowAndDoesNotCallCallBackIfEventIsAlreadyProcessed()
         {
             var redis = A.Fake<IRedisClient>();
-            var subscriber = new EventStore.RedisEventSubscriber(redis, "TestPrefix", "Test");
+            var subscriber = new MessageQueue.RedisEventSubscriber(redis, "TestPrefix", "Test");
             TestEvent callbackData = null;
 
             A.CallTo(() => redis.ListRightPopLeftPushAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(RedisValue.Null);

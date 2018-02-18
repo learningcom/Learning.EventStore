@@ -1,4 +1,5 @@
 ﻿using System;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain;
 using Newtonsoft.Json;
 

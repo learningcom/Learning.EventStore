@@ -1,5 +1,4 @@
-﻿using System;
-using Learning.EventStore.Messages;
+﻿using Learning.MessageQueue.Messages;
 
 namespace Learning.EventStore
 {

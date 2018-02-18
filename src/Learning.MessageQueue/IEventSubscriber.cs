@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Learning.EventStore
+namespace Learning.MessageQueue
 {
     public interface IEventSubscriber
     {

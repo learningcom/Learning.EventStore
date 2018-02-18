@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
 using Learning.EventStore.Infrastructure;
-using Learning.EventStore.MessageQueue;
+using Learning.MessageQueue;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Learning.EventStore.Common;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore
+namespace Learning.MessageQueue
 {
     public class RedisEventSubscriber : IEventSubscriber
     {

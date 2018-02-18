@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using FakeItEasy;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain.Exceptions;
-using Learning.EventStore.MessageQueue;
 using Learning.EventStore.Test.Mocks;
+using Learning.MessageQueue;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -37,7 +36,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
                 "Subscriber1",
                 "Subscriber2"
             };
-            A.CallTo(() => _redis.SetMembersAsync("Subscribers:test:TestEvent")).Returns(Task.Run(() => subscriberList));
+            A.CallTo(() => _redis.SetMembersAsync("Subscribers:{test:TestEvent}")).Returns(Task.Run(() => subscriberList));
 
 
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };

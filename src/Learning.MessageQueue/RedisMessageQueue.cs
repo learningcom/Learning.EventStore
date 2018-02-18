@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain.Exceptions;
-using Learning.EventStore.Extensions;
 using Learning.EventStore.Infrastructure;
-using Learning.EventStore.Messages;
+using Learning.MessageQueue.Messages;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore.MessageQueue
+namespace Learning.MessageQueue
 {
     public class RedisMessageQueue : IMessageQueue
     {

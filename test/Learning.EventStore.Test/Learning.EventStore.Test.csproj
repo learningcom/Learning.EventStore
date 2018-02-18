@@ -12,7 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Learning.EventStore.Common\Learning.EventStore.Common.csproj" />
     <ProjectReference Include="..\..\src\Learning.EventStore\Learning.EventStore.csproj" />
+    <ProjectReference Include="..\..\src\Learning.MessageQueue\Learning.MessageQueue.csproj" />
   </ItemGroup>
 
   <ItemGroup>

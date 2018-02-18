@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Learning.EventStore.Messages
+namespace Learning.MessageQueue.Messages
 {
     public interface ISubscription
     {
