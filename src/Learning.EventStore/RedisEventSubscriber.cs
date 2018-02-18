@@ -23,7 +23,7 @@ namespace Learning.EventStore
             //Register subscriber
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
-            var subscriberSetKey = $"Subscribers:{eventKey}";
+            var subscriberSetKey = $"Subscribers:{{{eventKey}}}";
             var publishedListKey = $"{_keyPrefix}:{{{eventKey}}}:PublishedEvents";
             await _redis.SetAddAsync(subscriberSetKey, _keyPrefix).ConfigureAwait(false);
 

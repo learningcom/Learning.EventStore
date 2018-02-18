@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Learning.EventStore.MessageQueue;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -15,11 +16,13 @@ namespace Learning.EventStore.Test.RedisEventStore
     {
         private readonly IRedisClient _redis;
         private readonly IEnumerable<IEvent> _events;
+        private readonly IMessageQueue _messageQueue;
 
         public GetTest()
         {
             _redis = A.Fake<IRedisClient>();
-            var redisEventStore = new EventStore.RedisEventStore(_redis, "test", "test");
+            _messageQueue = A.Fake<IMessageQueue>();
+            var redisEventStore = new EventStore.RedisEventStore(_redis, "test", _messageQueue);
             var commits = new RedisValue[] {1, 3, 5};
             var evenList = new List<TestEvent>
             {

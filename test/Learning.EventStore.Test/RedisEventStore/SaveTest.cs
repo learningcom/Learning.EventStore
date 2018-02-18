@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Infrastructure;
+using Learning.EventStore.MessageQueue;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -19,6 +20,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         private readonly ITransaction _trans;
         private readonly List<TestEvent> _eventList;
         private readonly string _serializedEvent;
+        private readonly IMessageQueue _messageQueue;
         private readonly EventStore.RedisEventStore _redisEventStore;
 
         public SaveTest()
@@ -26,41 +28,34 @@ namespace Learning.EventStore.Test.RedisEventStore
             _redis = A.Fake<IRedisClient>();
             _trans = A.Fake<ITransaction>();
             _eventList = new List<TestEvent> { new TestEvent {Id = "12345"} };
-            var database = A.Fake<IDatabase>();
-            _redisEventStore = new EventStore.RedisEventStore(_redis, "test", "test");
+            _messageQueue = A.Fake<IMessageQueue>();
+            var database = A.Fake<IDatabase>(); 
+            _redisEventStore = new EventStore.RedisEventStore(_redis, "test", _messageQueue);
 
             A.CallTo(() => _redis.Database).Returns(database);
             A.CallTo(() => _redis.Database.CreateTransaction(null)).Returns(_trans);
             A.CallTo(() => _redis.HashLengthAsync("EventStore:test")).Returns(Task.Run(() => (long) 2));
-
-            var subscriberList = new RedisValue[]
-                {
-                    "Subscriber1",
-                    "Subscriber2"
-                };
-            A.CallTo(() => _redis.SetMembersAsync("Subscribers:test:TestEvent")).Returns(Task.Run(() => subscriberList));
-
 
             var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             _serializedEvent = JsonConvert.SerializeObject(_eventList.First(), settings);
         }
 
         [TestMethod]
-        public async Task CreatesTransactions()
+        public async Task CreatesTransaction()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _redis.Database.CreateTransaction(null)).MustHaveHappened(Repeated.Exactly.Times(2));
+            A.CallTo(() => _redis.Database.CreateTransaction(null)).MustHaveHappened(Repeated.Exactly.Times(1));
         }
 
         [TestMethod]
-        public async Task ExecutesTransactions()
+        public async Task ExecutesTransaction()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(2));
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(1));
         }
 
         [TestMethod]
@@ -83,24 +78,13 @@ namespace Learning.EventStore.Test.RedisEventStore
 
 
         [TestMethod]
-        public async Task AddsMessagesToPublishedEventsListForEachSubscriber()
+        public async Task CallsMessageQueuePublish()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _trans.ListRightPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, "12345", A<string>._ ))
                 .MustHaveHappened();
-            A.CallTo(() => _trans.ListRightPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
-                .MustHaveHappened();
-        }
-
-        [TestMethod]
-        public async Task PublishesEvent()
-        {
-            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
-            await _redisEventStore.SaveAsync(_eventList);
-
-            A.CallTo(() => _trans.PublishAsync("test:TestEvent", true, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
@@ -111,14 +95,32 @@ namespace Learning.EventStore.Test.RedisEventStore
             try
             {
                 await _redisEventStore.SaveAsync(_eventList);
-                Assert.Fail("Should have thrown InvalidOperationException");
+                Assert.Fail("Should have thrown ConcurrencyException");
             }
             catch(ConcurrencyException e)
             {
                 Assert.AreEqual("A different version than expected was found in aggregate 12345", e.Message);
                 A.CallTo(() => _trans.PublishAsync("test:TestEvent", true, CommandFlags.None)).MustNotHaveHappened();
-                A.CallTo(() => _trans.ListRightPushAsync(A<RedisKey>.That.Matches(x => x.ToString().Contains(_eventList.First().Id)), A<RedisValue>._, When.Always, CommandFlags.None)).MustHaveHappened();
+                A.CallTo(() => _trans.ListRightPushAsync(A<RedisKey>.That.Matches(x => x.ToString().Contains(_eventList.First().Id)), A<RedisValue>._, When.Always, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
                 A.CallTo(() => _redis.HashDeleteAsync(A<string>.That.Contains("EventStore:test"), A<string>._)).MustHaveHappened();
+            }
+        }
+
+        [TestMethod]
+        public async Task DeletesFromEventStoreHashAndCommitListIfPublishThrowsException()
+        {
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, A<string>._, A<string>._)).Throws(new MessagePublishFailedException("12345", 10));
+
+            try
+            {
+                await _redisEventStore.SaveAsync(_eventList);
+                Assert.Fail("Should have thrown MessagePublishFailedException");
+            }
+            catch (MessagePublishFailedException)
+            {
+                A.CallTo(() => _redis.HashDeleteAsync(A<string>.That.Contains("EventStore:test"), A<string>._)).MustHaveHappened();
+                A.CallTo(() => _redis.ListRemoveAsync("{EventStore:test}:12345", A<string>._, -1)).MustHaveHappened();
             }
         }
 
@@ -129,7 +131,7 @@ namespace Learning.EventStore.Test.RedisEventStore
 
             try
             {
-                new EventStore.RedisEventStore(_redis, settings, "test");
+                new EventStore.RedisEventStore(_redis, settings, _messageQueue);
                 Assert.Fail("Should have thrown ArgumentException");
             }
             catch (ArgumentException e)
