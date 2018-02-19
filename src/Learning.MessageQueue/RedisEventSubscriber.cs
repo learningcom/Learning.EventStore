@@ -19,7 +19,21 @@ namespace Learning.MessageQueue
             _environment = environment;
         }
 
-        public async Task SubscribeAsync<T>(Action<T> callBack)
+        public async Task SubscribeAsync<T>(Action<T> retryAction)
+        {
+            Task Func(T arg)
+            {
+                return Task.Run(() =>
+                {
+                    retryAction(arg);
+                    return true;
+                });
+            }
+
+            await SubscribeAsync((Func<T, Task>)Func).ConfigureAwait(false);
+        }
+
+        public async Task SubscribeAsync<T>(Func<T, Task> callBack)
         {
             //Register subscriber
             var eventType = typeof(T).Name;
