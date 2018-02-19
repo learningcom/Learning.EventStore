@@ -59,7 +59,7 @@ namespace Learning.MessageQueue
                 {
                     //Deserialize the event data and invoke the handler
                     var message = JsonConvert.DeserializeObject<T>(eventData);
-                    callBack.Invoke(message);
+                    await callBack.Invoke(message).ConfigureAwait(false);
 
                     //Remove the event from the 'processing' list.
                     await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);
