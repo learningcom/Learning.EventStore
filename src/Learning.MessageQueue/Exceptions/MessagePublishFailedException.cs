@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Learning.EventStore.Domain.Exceptions
+namespace Learning.MessageQueue.Exceptions
 {
     public class MessagePublishFailedException : Exception
     {

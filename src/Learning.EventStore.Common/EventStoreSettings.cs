@@ -1,4 +1,4 @@
-﻿namespace Learning.EventStore.Infrastructure
+﻿namespace Learning.EventStore.Common
 {
     public class EventStoreSettings
     {

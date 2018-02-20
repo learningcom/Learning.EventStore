@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
-using Learning.EventStore.Domain.Exceptions;
-using Learning.EventStore.Infrastructure;
+using Learning.MessageQueue.Exceptions;
 using Learning.MessageQueue.Messages;
 using Newtonsoft.Json;
 using StackExchange.Redis;

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Learning.EventStore.Common;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
-using Learning.EventStore.Infrastructure;
 using Learning.MessageQueue;
 using Newtonsoft.Json;
 using StackExchange.Redis;
