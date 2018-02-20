@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Learning.EventStore.Common;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore
+namespace Learning.MessageQueue
 {
     public class RedisEventSubscriber : IEventSubscriber
     {
@@ -18,12 +19,26 @@ namespace Learning.EventStore
             _environment = environment;
         }
 
-        public async Task SubscribeAsync<T>(Action<T> callBack)
+        public async Task SubscribeAsync<T>(Action<T> retryAction)
+        {
+            Task Func(T arg)
+            {
+                return Task.Run(() =>
+                {
+                    retryAction(arg);
+                    return true;
+                });
+            }
+
+            await SubscribeAsync((Func<T, Task>)Func).ConfigureAwait(false);
+        }
+
+        public async Task SubscribeAsync<T>(Func<T, Task> callBack)
         {
             //Register subscriber
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
-            var subscriberSetKey = $"Subscribers:{eventKey}";
+            var subscriberSetKey = $"Subscribers:{{{eventKey}}}";
             var publishedListKey = $"{_keyPrefix}:{{{eventKey}}}:PublishedEvents";
             await _redis.SetAddAsync(subscriberSetKey, _keyPrefix).ConfigureAwait(false);
 
@@ -44,7 +59,7 @@ namespace Learning.EventStore
                 {
                     //Deserialize the event data and invoke the handler
                     var message = JsonConvert.DeserializeObject<T>(eventData);
-                    callBack.Invoke(message);
+                    await callBack.Invoke(message).ConfigureAwait(false);
 
                     //Remove the event from the 'processing' list.
                     await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);

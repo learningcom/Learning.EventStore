@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Cache;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;

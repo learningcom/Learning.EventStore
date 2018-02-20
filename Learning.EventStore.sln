@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8E84072C-5B59-4195-9469-404D0A38CA66}"
 EndProject
@@ -12,6 +12,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Learning.EventStore", "src\Learning.EventStore\Learning.EventStore.csproj", "{DF108EC3-CED8-4D6E-B69E-0FC1A9606537}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Learning.EventStore.Test", "test\Learning.EventStore.Test\Learning.EventStore.Test.csproj", "{83F80529-5B67-4BF8-90FB-26CD383D5B3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning.MessageQueue", "src\Learning.MessageQueue\Learning.MessageQueue.csproj", "{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning.EventStore.Common", "src\Learning.EventStore.Common\Learning.EventStore.Common.csproj", "{B925961B-4B49-4D52-9F14-54A08AE2D01A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +31,14 @@ Global
 		{83F80529-5B67-4BF8-90FB-26CD383D5B3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83F80529-5B67-4BF8-90FB-26CD383D5B3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83F80529-5B67-4BF8-90FB-26CD383D5B3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B925961B-4B49-4D52-9F14-54A08AE2D01A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B925961B-4B49-4D52-9F14-54A08AE2D01A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B925961B-4B49-4D52-9F14-54A08AE2D01A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B925961B-4B49-4D52-9F14-54A08AE2D01A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -34,5 +46,10 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{DF108EC3-CED8-4D6E-B69E-0FC1A9606537} = {8E84072C-5B59-4195-9469-404D0A38CA66}
 		{83F80529-5B67-4BF8-90FB-26CD383D5B3B} = {41E1138E-59F8-4CCB-BCF2-94A98D86114E}
+		{7C0EBFDF-C931-4AE8-B9B0-C07557B87E8D} = {8E84072C-5B59-4195-9469-404D0A38CA66}
+		{B925961B-4B49-4D52-9F14-54A08AE2D01A} = {8E84072C-5B59-4195-9469-404D0A38CA66}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0172F500-ACD9-4CB2-B4F4-27BF4EAF1612}
 	EndGlobalSection
 EndGlobal

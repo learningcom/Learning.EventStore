@@ -1,5 +1,6 @@
 ﻿using System;
 using FakeItEasy;
+using Learning.EventStore.Common;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -17,7 +18,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         public SubscribeTest()
         {
             _redis = A.Fake<IRedisClient>();
-            var subscriber = new EventStore.RedisEventSubscriber(_redis, "TestPrefix", "Test");
+            var subscriber = new MessageQueue.RedisEventSubscriber(_redis, "TestPrefix", "Test");
             var testEvent = new TestEvent();
             _serializedEvent = JsonConvert.SerializeObject(testEvent);
 
@@ -42,7 +43,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void RegistersAsSubscriber()
         {
-            A.CallTo(() => _redis.SetAddAsync("Subscribers:Test:TestEvent", "TestPrefix")).MustHaveHappened();
+            A.CallTo(() => _redis.SetAddAsync("Subscribers:{Test:TestEvent}", "TestPrefix")).MustHaveHappened();
         }
 
         [TestMethod]

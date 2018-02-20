@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using StackExchange.Redis;
 
-namespace Learning.EventStore
+namespace Learning.EventStore.Common
 {
     public interface IRedisClient
     {
