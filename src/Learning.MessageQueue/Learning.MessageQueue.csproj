@@ -44,7 +44,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj" />
+    <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

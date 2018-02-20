@@ -46,7 +46,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj" />
+    <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
     <ProjectReference Include="..\Learning.MessageQueue\Learning.MessageQueue.csproj" />
   </ItemGroup>
 
