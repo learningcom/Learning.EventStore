@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Common;
-using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
+using Learning.MessageQueue.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using StackExchange.Redis;
