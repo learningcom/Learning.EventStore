@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net46;net452</TargetFrameworks>
+    <AssemblyName>Learning.EventStore.Common</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
