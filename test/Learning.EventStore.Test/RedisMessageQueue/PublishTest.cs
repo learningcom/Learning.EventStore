@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Common;
 using Learning.EventStore.Test.Mocks;
@@ -24,7 +25,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             _redis = A.Fake<IRedisClient>();
             _trans = A.Fake<ITransaction>();
             _messageQueue = A.Fake<IMessageQueue>();
-            _event = new TestEvent { Id = "12345" };
+            _event = new TestEvent { Id = "12345", TimeStamp = DateTimeOffset.UtcNow};
             var database = A.Fake<IDatabase>();
             _messageQueue = new MessageQueue.RedisMessageQueue(_redis, "test", "test");
 
