@@ -34,6 +34,11 @@ namespace Learning.MessageQueue
 
         public async Task PublishAsync(IMessage message)
         {
+            if(message.TimeStamp == default(DateTimeOffset))
+            {
+                message.TimeStamp = DateTimeOffset.UtcNow;
+            }
+
             var serializedEvent = JsonConvert.SerializeObject(message, JsonSerializerSettings);
             var messageType = message.GetType().Name;
 
