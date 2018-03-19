@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Learning.EventStore.Cache;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -22,7 +22,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         private readonly List<TestEvent> _eventList;
         private readonly string _serializedEvent;
         private readonly IMessageQueue _messageQueue;
-        private readonly EventStore.RedisEventStore _redisEventStore;
+        private readonly DataStores.Redis.RedisEventStore _redisEventStore;
 
         public SaveTest()
         {
@@ -31,7 +31,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             _eventList = new List<TestEvent> { new TestEvent {Id = "12345"} };
             _messageQueue = A.Fake<IMessageQueue>();
             var database = A.Fake<IDatabase>(); 
-            _redisEventStore = new EventStore.RedisEventStore(_redis, "test", _messageQueue);
+            _redisEventStore = new DataStores.Redis.RedisEventStore(_redis, "test", _messageQueue);
 
             A.CallTo(() => _redis.Database).Returns(database);
             A.CallTo(() => _redis.Database.CreateTransaction(null)).Returns(_trans);
@@ -132,7 +132,7 @@ namespace Learning.EventStore.Test.RedisEventStore
 
             try
             {
-                new EventStore.RedisEventStore(_redis, settings, _messageQueue);
+                new DataStores.Redis.RedisEventStore(_redis, settings, _messageQueue);
                 Assert.Fail("Should have thrown ArgumentException");
             }
             catch (ArgumentException e)

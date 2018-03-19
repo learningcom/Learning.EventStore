@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Cache

@@ -9,7 +9,7 @@ using Learning.MessageQueue;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore
+namespace Learning.EventStore.DataStores.Redis
 {
     public class RedisEventStore : IEventStore
     {
