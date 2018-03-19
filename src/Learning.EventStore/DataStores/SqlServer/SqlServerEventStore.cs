@@ -60,17 +60,13 @@ namespace Learning.EventStore.DataStores.SqlServer
 
         public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
         {
-            using (var conn = new SqlConnection(_settings.WriteConnectionString))
-            {
-                await conn.OpenAsync();
-                var result = await conn.QueryAsync<string>(_settings.GetSql, new {AggregateId = aggregateId, FromVersion = fromVersion }, commandType: _settings.CommandType).ConfigureAwait(false);
+            var result = await _sqlServerClient.GetEvents(aggregateId, fromVersion).ConfigureAwait(false);
 
-                var events = result.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.ToString().Decompress(), JsonSerializerSettings))
-                    .OrderBy(x => x.Version)
-                    .ToList();
+            var events = result.Select(serializedEvent => JsonConvert.DeserializeObject<IEvent>(serializedEvent.ToString().Decompress(), JsonSerializerSettings))
+                .OrderBy(x => x.Version)
+                .ToList();
 
-                return events;
-            }
+            return events;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Learning.EventStore.Common.SqlServer
 {
@@ -6,7 +7,7 @@ namespace Learning.EventStore.Common.SqlServer
     {
         Task<long> SaveEvent(EventDto eventDto);
 
-        Task<string> GetEvent(string aggregateId, int fromVersion);
+        Task<IEnumerable<string>> GetEvents(string aggregateId, int fromVersion);
 
         Task DeleteEvent(long eventId);
     }

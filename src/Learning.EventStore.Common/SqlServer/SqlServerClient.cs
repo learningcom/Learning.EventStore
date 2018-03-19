@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Collections.Generic;
+using Dapper;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
@@ -25,13 +26,13 @@ namespace Learning.EventStore.Common.SqlServer
             return eventId;
         }
 
-        public async Task<string> GetEvent(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<string>> GetEvents(string aggregateId, int fromVersion)
         {
-            string result;
+            IEnumerable<string> result;
             using (var conn = new SqlConnection(_settings.WriteConnectionString))
             {
                 await conn.OpenAsync();
-                result = await conn.QuerySingleAsync<string>(_settings.GetSql, new {AggregateId = aggregateId, FromVersion = fromVersion}, commandType: _settings.CommandType);
+                result = await conn.QueryAsync<string>(_settings.GetSql, new {AggregateId = aggregateId, FromVersion = fromVersion}, commandType: _settings.CommandType);
             }
 
             return result;
