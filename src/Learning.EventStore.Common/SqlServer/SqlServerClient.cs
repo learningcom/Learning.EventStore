@@ -20,7 +20,7 @@ namespace Learning.EventStore.Common.SqlServer
             using (var conn = new SqlConnection(_settings.WriteConnectionString))
             {
                 await conn.OpenAsync();
-                eventId = await conn.QuerySingleAsync<long>(_settings.SaveSql, eventDto, commandType: _settings.CommandType);
+                eventId = await conn.QuerySingleAsync<long>(_settings.SaveSql, eventDto, commandType: _settings.CommandType).ConfigureAwait(false);
             }
 
             return eventId;
@@ -32,7 +32,7 @@ namespace Learning.EventStore.Common.SqlServer
             using (var conn = new SqlConnection(_settings.WriteConnectionString))
             {
                 await conn.OpenAsync();
-                result = await conn.QueryAsync<string>(_settings.GetSql, new {AggregateId = aggregateId, FromVersion = fromVersion}, commandType: _settings.CommandType);
+                result = await conn.QueryAsync<string>(_settings.GetSql, new {AggregateId = aggregateId, FromVersion = fromVersion}, commandType: _settings.CommandType).ConfigureAwait(false);
             }
 
             return result;
@@ -42,7 +42,7 @@ namespace Learning.EventStore.Common.SqlServer
         {
             using (var conn = new SqlConnection(_settings.WriteConnectionString))
             {
-                await conn.ExecuteAsync(_settings.DeleteSql, new {Id = eventId }, commandType: _settings.CommandType);
+                await conn.ExecuteAsync(_settings.DeleteSql, new {Id = eventId }, commandType: _settings.CommandType).ConfigureAwait(false);
             }
         }
     }
