@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Extensions;
-using Learning.EventStore.Infrastructure;
 using Newtonsoft.Json;
 
 namespace Learning.EventStore.Snapshotting

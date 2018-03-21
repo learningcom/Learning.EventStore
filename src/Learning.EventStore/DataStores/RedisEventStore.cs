@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
 using Learning.MessageQueue;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore.DataStores.Redis
+namespace Learning.EventStore.DataStores
 {
     public class RedisEventStore : IEventStore
     {

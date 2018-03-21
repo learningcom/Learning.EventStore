@@ -5,5 +5,7 @@ namespace Learning.EventStore
     public interface IEvent : IMessage
     {
         int Version { get; set; }
+
+        string AggregateType { get; set; }
     }
 }

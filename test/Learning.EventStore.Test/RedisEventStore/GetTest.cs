@@ -23,7 +23,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         {
             _redis = A.Fake<IRedisClient>();
             _messageQueue = A.Fake<IMessageQueue>();
-            var redisEventStore = new DataStores.Redis.RedisEventStore(_redis, "test", _messageQueue);
+            var redisEventStore = new DataStores.RedisEventStore(_redis, "test", _messageQueue);
             var commits = new RedisValue[] {1, 3, 5};
             var evenList = new List<TestEvent>
             {

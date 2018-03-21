@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using FakeItEasy;
-using Learning.EventStore.Common.SqlServer;
+using Learning.EventStore.Common.Sql;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,10 +18,10 @@ namespace Learning.EventStore.Test.SqlServerEventStore
 
         public GetTest()
         {
-            var sqlServerClient = A.Fake<ISqlServerClient>();
+            var sqlServerClient = A.Fake<ISqlClient>();
             var messageQueue = A.Fake<IMessageQueue>();
-            var settings = new SqlServerEventStoreSettings(new SqlConnectionStringBuilder());
-            var sqlEventStore = new DataStores.SqlServer.SqlServerEventStore(settings, messageQueue, sqlServerClient);
+            var settings = new SqlEventStoreSettings(new SqlConnectionStringBuilder(), "TestApp");
+            var sqlEventStore = new DataStores.SqlEventStore(messageQueue, sqlServerClient, settings);
             var jsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             var evenList = new List<string>
             {

@@ -1,4 +1,4 @@
-﻿namespace Learning.EventStore.Common
+﻿namespace Learning.EventStore.Common.Redis
 {
     public class EventStoreSettings
     {
