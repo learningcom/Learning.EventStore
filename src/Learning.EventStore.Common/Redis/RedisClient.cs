@@ -70,15 +70,15 @@ namespace Learning.EventStore.Common
             return result;
         }
 
-        public async Task<RedisValue> ListRightPopLeftPushAsync(RedisKey source, RedisKey destination)
+        public RedisValue ListRightPopLeftPush(RedisKey source, RedisKey destination)
         {
-            var result = await Database.ListRightPopLeftPushAsync(source, destination).ConfigureAwait(false);
+            var result = Database.ListRightPopLeftPush(source, destination);
             return result;
         }
 
-        public async Task<long> ListRemoveAsync(RedisKey key, RedisValue value)
+        public long ListRemove(RedisKey key, RedisValue value)
         {
-            var result = await Database.ListRemoveAsync(key, value).ConfigureAwait(false);
+            var result = Database.ListRemove(key, value);
             return result;
         }
 

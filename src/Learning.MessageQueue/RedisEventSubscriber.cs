@@ -19,21 +19,7 @@ namespace Learning.MessageQueue
             _environment = environment;
         }
 
-        public async Task SubscribeAsync<T>(Action<T> retryAction)
-        {
-            Task Func(T arg)
-            {
-                return Task.Run(() =>
-                {
-                    retryAction(arg);
-                    return true;
-                });
-            }
-
-            await SubscribeAsync((Func<T, Task>)Func).ConfigureAwait(false);
-        }
-
-        public async Task SubscribeAsync<T>(Func<T, Task> callBack)
+        public async Task SubscribeAsync<T>(Action<T> callBack)
         {
             //Register subscriber
             var eventType = typeof(T).Name;
@@ -43,7 +29,7 @@ namespace Learning.MessageQueue
             await _redis.SetAddAsync(subscriberSetKey, _keyPrefix).ConfigureAwait(false);
 
             //Create subscription callback
-            async void RedisCallback(RedisChannel channel, RedisValue data)
+            void RedisCallback(RedisChannel channel, RedisValue data)
             {
                 var processingListKey = $"{_keyPrefix}:{{{eventKey}}}:ProcessingEvents";
 
@@ -51,18 +37,17 @@ namespace Learning.MessageQueue
                 Pop the event out of the queue and atomicaly push it into another 'processing' list.
                 Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
                 */
-                var eventData = await _redis.ListRightPopLeftPushAsync(publishedListKey, processingListKey)
-                    .ConfigureAwait(false);
+                var eventData = _redis.ListRightPopLeftPush(publishedListKey, processingListKey);
 
                 // if the eventData is null, then the event has already been processed by another instance, skip further execution
                 if (eventData.HasValue)
                 {
                     //Deserialize the event data and invoke the handler
                     var message = JsonConvert.DeserializeObject<T>(eventData);
-                    await callBack.Invoke(message).ConfigureAwait(false);
+                    callBack.Invoke(message);
 
                     //Remove the event from the 'processing' list.
-                    await _redis.ListRemoveAsync(processingListKey, eventData).ConfigureAwait(false);
+                    _redis.ListRemove(processingListKey, eventData);
                 }
             }
 
