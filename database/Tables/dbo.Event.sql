@@ -14,5 +14,7 @@ ALTER TABLE [dbo].[Event] ADD CONSTRAINT [pkEvent] PRIMARY KEY CLUSTERED ([Event
 GO
 ALTER TABLE [dbo].[Event] ADD CONSTRAINT [fkEvent_Aggregate] FOREIGN KEY ([AggregateKey]) REFERENCES [dbo].[Aggregate] ([AggregateKey])
 GO
+ALTER TABLE [dbo].[Event] ADD CONSTRAINT [uqcAggregateKey_Version] UNIQUE ([AggregateKey], [Version])
+GO
 CREATE UNIQUE NONCLUSTERED INDEX [idxEvent_AggregateKey_Version] ON [dbo].[Event] ([AggregateKey], [Version]) INCLUDE ([EventData]) ON [PRIMARY]
 GO
