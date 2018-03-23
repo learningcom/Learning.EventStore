@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
-#if NETSTANDARD2_0
+#if !NET46 && !NET452
 using Microsoft.Extensions.Logging;
 #endif
 using Newtonsoft.Json;
