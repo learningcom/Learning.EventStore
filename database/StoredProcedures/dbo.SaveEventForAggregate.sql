@@ -40,13 +40,11 @@ BEGIN
 			(
 				[AggregateId], 
 				[AggregateType],
-				[ApplicationName],
-				[Version]
+				[ApplicationName]
 			)
 			SELECT @AggregateId ,
 				@AggregateType , 
-				@ApplicationName ,
-				@Version
+				@ApplicationName
 			
 			SET @AggregateKey = SCOPE_IDENTITY()
 		END
@@ -69,5 +67,5 @@ BEGIN
 	)
 END;
 GO
-GRANT EXECUTE ON  [dbo].[lc_CreateExerciseResult] TO [lc_ReaderWriter]
+GRANT EXECUTE ON  [dbo].[SaveEventForAggregate] TO [lc_ReaderWriter]
 GO

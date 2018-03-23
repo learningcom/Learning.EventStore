@@ -11,7 +11,7 @@ namespace Learning.EventStore.Test.Mocks
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int version)
+        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int version)
         {
             return Task.Run<IEnumerable<IEvent>>(() =>
             {

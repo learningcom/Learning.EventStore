@@ -16,7 +16,7 @@ namespace Learning.EventStore.Test.Mocks
             SavedEvents = new List<IEvent>();
         }
 
-        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int version)
+        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
         {
             return Task.Run(() =>
             {
@@ -30,7 +30,7 @@ namespace Learning.EventStore.Test.Mocks
                     new TestAggregateDidSomething {Id = aggregateId, Version = 1},
                     new TestAggregateDidSomeethingElse {Id = aggregateId, Version = 2},
                     new TestAggregateDidSomething {Id = aggregateId, Version = 3},
-                }.Where(x => x.Version > version);
+                }.Where(x => x.Version > fromVersion);
             });
         }
 

@@ -1,25 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Learning.MessageQueue;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Transactions;
+using Dapper;
 using Learning.EventStore.Common.Sql;
 
 namespace Learning.EventStore.DataStores
 {
-    public class SqlEventStore
+    public class SqlEventStore : IEventStore
     {
         private readonly SqlEventStoreSettings _settings;
         private readonly IMessageQueue _messageQueue;
-        private readonly ISqlClient _sqlClient;
+        private readonly ISqlConnectionFactory _sqlConnectionFactory;
+        private readonly IDapperWrapper _dapper;
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
-        public SqlEventStore(IMessageQueue messageQueue, ISqlClient sqlClient, SqlEventStoreSettings settings)
+        public SqlEventStore(IMessageQueue messageQueue, ISqlConnectionFactory sqlConnectionFactory, IDapperWrapper dapper, SqlEventStoreSettings settings)
         {
             _settings = settings;
             _messageQueue = messageQueue;
-            _sqlClient = sqlClient;
+            _sqlConnectionFactory = sqlConnectionFactory;
+            _dapper = dapper;
         }
 
         public async Task SaveAsync(IEnumerable<IEvent> events)
@@ -40,18 +46,35 @@ namespace Learning.EventStore.DataStores
                     EventData = eventData,
                 };
 
-                using (TransactionScope trans = new TransactionScope())
+                using (var conn = _sqlConnectionFactory.GetWriteConnection())
                 {
-                    await _sqlClient.SaveEvent(dto).ConfigureAwait(false);
-                    await _messageQueue.PublishAsync(eventData, @event.Id, eventType).ConfigureAwait(false);
-                    trans.Complete();
+                    conn.Open();
+                    using (var trans = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            await _dapper.ExecuteAsync(conn, _settings.SaveSql, dto, _settings.CommandType, trans).ConfigureAwait(false);
+                            await _messageQueue.PublishAsync(eventData, @event.Id, eventType).ConfigureAwait(false);
+                            trans.Commit();
+                        }
+                        catch (Exception)
+                        {
+                            trans.Rollback();
+                            throw;
+                        }
+                    }
                 }
             }
         }
 
-        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
         {
-            var result = await _sqlClient.GetEvents(aggregateId, fromVersion).ConfigureAwait(false);
+            IEnumerable<string> result;
+            using (var conn = _sqlConnectionFactory.GetReadConnection())
+            {
+                conn.Open();
+                result = await _dapper.QueryAsync<string>(conn, _settings.GetSql, new { AggregateId = aggregateId, Applicationname = _settings.ApplicationName, AggregateType = aggregateType, FromVersion = fromVersion }, _settings.CommandType).ConfigureAwait(false);
+            }
 
             var events = result.Select(serializedEvent => 
                 JsonConvert.DeserializeObject<IEvent>(serializedEvent, JsonSerializerSettings));

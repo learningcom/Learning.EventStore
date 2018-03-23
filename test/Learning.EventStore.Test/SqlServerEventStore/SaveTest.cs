@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Common.Sql;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
 using Learning.MessageQueue.Exceptions;
@@ -15,19 +18,26 @@ namespace Learning.EventStore.Test.SqlServerEventStore
     [TestClass]
     public class SaveTest
     {
-        private readonly ISqlClient _sqlClient;
         private readonly List<TestEvent> _eventList;
         private readonly string _serializedEvent;
         private readonly IMessageQueue _messageQueue;
-        private readonly DataStores.SqlEventStore _sqlEventStore;
+        private readonly SqlEventStore _sqlEventStore;
+        private readonly IDapperWrapper _dapper;
+        private readonly IDbConnection _writeDbConnection;
+        private readonly IDbTransaction _transaction;
 
         public SaveTest()
         {
-            _sqlClient = A.Fake<ISqlClient>();
+            _writeDbConnection = A.Fake<IDbConnection>();
+            _transaction = A.Fake<IDbTransaction>();
+            A.CallTo(() => _writeDbConnection.BeginTransaction()).Returns(_transaction);
+            var sqlConnectionFactory = A.Fake<ISqlConnectionFactory>();
+            _dapper = A.Fake<IDapperWrapper>();
+            A.CallTo(() => sqlConnectionFactory.GetWriteConnection()).Returns(_writeDbConnection);
             _eventList = new List<TestEvent> {new TestEvent {Id = "12345"}};
             _messageQueue = A.Fake<IMessageQueue>();
             var settings = new SqlEventStoreSettings(new SqlConnectionStringBuilder(), "TestApp");
-            _sqlEventStore = new DataStores.SqlEventStore(_messageQueue, _sqlClient, settings);
+            _sqlEventStore = new SqlEventStore(_messageQueue, sqlConnectionFactory, _dapper, settings);
 
             var jsonSerializerSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
             _serializedEvent = JsonConvert.SerializeObject(_eventList.First(), jsonSerializerSettings);
@@ -38,9 +48,29 @@ namespace Learning.EventStore.Test.SqlServerEventStore
         {
             await _sqlEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _sqlClient.SaveEvent(A<EventDto>._)).MustHaveHappened();
+            A.CallTo(() => _dapper.ExecuteAsync(_writeDbConnection, A<string>._, A<EventDto>._, CommandType.StoredProcedure, _transaction)).MustHaveHappened();
             A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._ ))
                 .MustHaveHappened();
+            A.CallTo(() => _transaction.Commit()).MustHaveHappened();
+        }
+
+        [TestMethod]
+        public async Task RollsBackTransactionIfPublishFails()
+        {
+            A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._)).Throws(new Exception("Publish Failed"));
+
+            try
+            {
+                await _sqlEventStore.SaveAsync(_eventList);
+            }
+            catch (Exception e)
+            {
+                A.CallTo(() => _dapper.ExecuteAsync(_writeDbConnection, A<string>._, A<EventDto>._, CommandType.StoredProcedure, _transaction)).MustHaveHappened();
+                A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._))
+                    .MustHaveHappened();
+                A.CallTo(() => _transaction.Commit()).MustNotHaveHappened();
+                A.CallTo(() => _transaction.Rollback()).MustHaveHappened();
+            }
         }
     }
 }

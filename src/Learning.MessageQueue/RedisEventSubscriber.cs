@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Logging;
+#endif
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
@@ -11,6 +14,18 @@ namespace Learning.MessageQueue
         private readonly IRedisClient _redis;
         private readonly string _keyPrefix;
         private readonly string _environment;
+
+#if !NET46 && !NET452
+        private readonly ILogger _logger;
+
+        public RedisEventSubscriber(IRedisClient redis, string keyPrefix, string environment, ILoggerFactory loggerFactory)
+        {
+            _redis = redis;
+            _keyPrefix = keyPrefix;
+            _environment = environment;
+            _logger = loggerFactory.CreateLogger(GetType().Name);
+        }
+#endif
 
         public RedisEventSubscriber(IRedisClient redis, string keyPrefix, string environment)
         {
@@ -31,23 +46,34 @@ namespace Learning.MessageQueue
             //Create subscription callback
             void RedisCallback(RedisChannel channel, RedisValue data)
             {
-                var processingListKey = $"{_keyPrefix}:{{{eventKey}}}:ProcessingEvents";
-
-                /*
-                Pop the event out of the queue and atomicaly push it into another 'processing' list.
-                Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
-                */
-                var eventData = _redis.ListRightPopLeftPush(publishedListKey, processingListKey);
-
-                // if the eventData is null, then the event has already been processed by another instance, skip further execution
-                if (eventData.HasValue)
+                try
                 {
-                    //Deserialize the event data and invoke the handler
-                    var message = JsonConvert.DeserializeObject<T>(eventData);
-                    callBack.Invoke(message);
+                    var processingListKey = $"{_keyPrefix}:{{{eventKey}}}:ProcessingEvents";
 
-                    //Remove the event from the 'processing' list.
-                    _redis.ListRemove(processingListKey, eventData);
+                    /*
+                    Pop the event out of the queue and atomicaly push it into another 'processing' list.
+                    Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
+                    */
+                    var eventData = _redis.ListRightPopLeftPush(publishedListKey, processingListKey);
+
+                    // if the eventData is null, then the event has already been processed by another instance, skip further execution
+                    if (eventData.HasValue)
+                    {
+                        //Deserialize the event data and invoke the handler
+                        var message = JsonConvert.DeserializeObject<T>(eventData);
+                        callBack.Invoke(message);
+
+                        //Remove the event from the 'processing' list.
+                        _redis.ListRemove(processingListKey, eventData);
+                    }
+                }
+                catch (Exception e)
+                {
+#if !NET46 && !NET452
+                    _logger.LogError($"{e.Message}\n{e.StackTrace}", e);
+#endif
+                    throw;
+             
                 }
             }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using FakeItEasy;
@@ -18,10 +19,13 @@ namespace Learning.EventStore.Test.SqlServerEventStore
 
         public GetTest()
         {
-            var sqlServerClient = A.Fake<ISqlClient>();
+            var readDbConnection = A.Fake<IDbConnection>();
+            var sqlConnectionFactory = A.Fake<ISqlConnectionFactory>();
+            var dapper = A.Fake<IDapperWrapper>();
+            A.CallTo(() => sqlConnectionFactory.GetReadConnection()).Returns(readDbConnection);
             var messageQueue = A.Fake<IMessageQueue>();
             var settings = new SqlEventStoreSettings(new SqlConnectionStringBuilder(), "TestApp");
-            var sqlEventStore = new DataStores.SqlEventStore(messageQueue, sqlServerClient, settings);
+            var sqlEventStore = new DataStores.SqlEventStore(messageQueue, sqlConnectionFactory, dapper, settings);
             var jsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             var evenList = new List<string>
             {
@@ -30,9 +34,10 @@ namespace Learning.EventStore.Test.SqlServerEventStore
                 JsonConvert.SerializeObject(new TestEvent { Version = 3 }, jsonSerializerSettings)
             };
 
-            A.CallTo(() => sqlServerClient.GetEvents(A<string>._, 1)).Returns(evenList);
 
-            _events = sqlEventStore.GetAsync(Guid.Empty.ToString(), 1).Result;
+            A.CallTo(() => dapper.QueryAsync<string>(readDbConnection, A<string>._, A<object>._, CommandType.StoredProcedure)).Returns(evenList);
+
+            _events = sqlEventStore.GetAsync(Guid.Empty.ToString(), "TestType", 1).Result;
         }
 
         [TestMethod]

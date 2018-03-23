@@ -6,6 +6,6 @@ namespace Learning.EventStore.DataStores
     public interface IEventStore
     {
         Task SaveAsync(IEnumerable<IEvent> events);
-        Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion);
+        Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion);
     }
 }

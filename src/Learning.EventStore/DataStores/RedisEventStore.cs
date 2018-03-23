@@ -36,7 +36,7 @@ namespace Learning.EventStore.DataStores
             _messageQueue = messageQueue;
         }
 
-        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
         {
             //Get all the commits for the aggregateId that have happened since specified fromVersion
             var rangeStart = fromVersion < 0 ? 0 : fromVersion;

@@ -17,7 +17,7 @@ CREATE procedure [dbo].[GetEventsForAggregate]
 	@AggregateId [varchar] (255) ,
     @ApplicationName [varchar] (255) ,
     @AggregateType [varchar] (255) ,
-    @Version [int] = 1
+    @FromVersion [int] = 1
 )
 AS
 BEGIN
@@ -27,10 +27,10 @@ BEGIN
     FROM dbo.Event e
     INNER JOIN dbo.Aggregate ag ON e.AggregateKey = ag.AggregateKey 
     WHERE ag.AggregateId = @AggregateId 
-        AND e.[Version] >= @Version
+        AND e.[Version] > @FromVersion
     ORDER BY e.[Version] ASC
 
 END;
 GO
-GRANT EXECUTE ON  [dbo].[lc_CreateExerciseResult] TO [lc_ReaderWriter]
+GRANT EXECUTE ON  [dbo].[GetEventsForAggregate] TO [lc_ReaderWriter]
 GO
