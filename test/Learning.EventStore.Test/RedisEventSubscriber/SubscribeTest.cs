@@ -24,7 +24,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
 
             A.CallTo(() => _redis.ListLengthAsync("TestPrefix:{Test:TestEvent}:PublishedEvents")).Returns(2);
             A.CallTo(() => _redis.ListRangeAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", 0, 2)).Returns(new RedisValue[] { "Test1", "Test2" });
-            A.CallTo(() => _redis.ListRightPopLeftPushAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(_serializedEvent);
+            A.CallTo(() => _redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(_serializedEvent);
             A.CallTo(() => _redis.SubscribeAsync("Test:TestEvent", A<Action<RedisChannel, RedisValue>>._))
                 .Invokes(callObject =>
                 {
@@ -55,14 +55,14 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void RemovesFromProcessingListUponCompletion()
         {
-            A.CallTo(() => _redis.ListRemoveAsync("TestPrefix:{Test:TestEvent}:ProcessingEvents", _serializedEvent))
+            A.CallTo(() => _redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", _serializedEvent))
                 .MustHaveHappened();
         }
 
         [TestMethod]
         public void ProcessesAllEventsInPublishedList()
         {
-            A.CallTo(() => _redis.ListRightPopLeftPushAsync("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened(Repeated.Exactly.Times(3));
+            A.CallTo(() => _redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened(Repeated.Exactly.Times(3));
         }
     }
 }

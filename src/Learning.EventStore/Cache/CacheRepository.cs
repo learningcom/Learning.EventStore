@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Cache
@@ -66,7 +67,8 @@ namespace Learning.EventStore.Cache
                 if (_cache.IsTracked(aggregateId))
                 {
                     aggregate = (T)_cache.Get(aggregateId);
-                    var events = await _eventStore.GetAsync(aggregateId, aggregate.Version).ConfigureAwait(false);
+                    var aggregateType = typeof(T).Name;
+                    var events = await _eventStore.GetAsync(aggregateId, aggregateType, aggregate.Version).ConfigureAwait(false);
 
                     if (events.Any() && events.First().Version != aggregate.Version + 1)
                     {

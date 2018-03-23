@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Extensions;
 using Learning.MessageQueue;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
-namespace Learning.EventStore
+namespace Learning.EventStore.DataStores
 {
     public class RedisEventStore : IEventStore
     {
@@ -35,7 +36,7 @@ namespace Learning.EventStore
             _messageQueue = messageQueue;
         }
 
-        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, int fromVersion)
+        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
         {
             //Get all the commits for the aggregateId that have happened since specified fromVersion
             var rangeStart = fromVersion < 0 ? 0 : fromVersion;

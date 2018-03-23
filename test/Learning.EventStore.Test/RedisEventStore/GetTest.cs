@@ -23,7 +23,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         {
             _redis = A.Fake<IRedisClient>();
             _messageQueue = A.Fake<IMessageQueue>();
-            var redisEventStore = new EventStore.RedisEventStore(_redis, "test", _messageQueue);
+            var redisEventStore = new DataStores.RedisEventStore(_redis, "test", _messageQueue);
             var commits = new RedisValue[] {1, 3, 5};
             var evenList = new List<TestEvent>
             {
@@ -39,7 +39,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 3)).Returns(JsonConvert.SerializeObject(evenList[1], settings));
             A.CallTo(() => _redis.HashGetAsync(A<RedisKey>._, 5)).Returns(JsonConvert.SerializeObject(evenList[2], settings));
 
-            _events = redisEventStore.GetAsync(Guid.Empty.ToString(), 1).Result;
+            _events = redisEventStore.GetAsync(Guid.Empty.ToString(), "TestType", 1).Result;
         }
 
 

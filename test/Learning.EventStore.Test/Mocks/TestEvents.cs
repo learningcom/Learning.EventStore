@@ -6,12 +6,14 @@ namespace Learning.EventStore.Test.Mocks
     {
         public string Id { get; set; }
         public int Version { get; set; }
+        public string AggregateType { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }
     public class TestAggregateDidSomeethingElse : IEvent
     {
         public string Id { get; set; }
         public int Version { get; set; }
+        public string AggregateType { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }
 
@@ -19,6 +21,7 @@ namespace Learning.EventStore.Test.Mocks
     {
         public string Id { get; set; }
         public int Version { get; set; }
+        public string AggregateType { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
     }
 }

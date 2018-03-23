@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain.Exceptions;
 
 namespace Learning.EventStore.Domain
@@ -21,7 +22,8 @@ namespace Learning.EventStore.Domain
 
         public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
-            if (expectedVersion != null && (await _eventStore.GetAsync(aggregate.Id, expectedVersion.Value).ConfigureAwait(false)).Any())
+            var aggregateType = aggregate.GetType().Name;
+            if (expectedVersion != null && (await _eventStore.GetAsync(aggregate.Id, aggregateType, expectedVersion.Value).ConfigureAwait(false)).Any())
             {
                 throw new ConcurrencyException(aggregate.Id);
             }
@@ -37,7 +39,8 @@ namespace Learning.EventStore.Domain
 
         private async Task<T> LoadAggregateAsync<T>(string id) where T : AggregateRoot
         {
-            var events = await _eventStore.GetAsync(id, -1).ConfigureAwait(false);
+            var aggregateType = typeof(T).Name;
+            var events = await _eventStore.GetAsync(id, aggregateType, -1).ConfigureAwait(false);
             if (!events.Any())
             {
                 return default(T);

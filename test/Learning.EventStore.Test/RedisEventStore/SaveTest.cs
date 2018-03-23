@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
@@ -22,7 +23,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         private readonly List<TestEvent> _eventList;
         private readonly string _serializedEvent;
         private readonly IMessageQueue _messageQueue;
-        private readonly EventStore.RedisEventStore _redisEventStore;
+        private readonly DataStores.RedisEventStore _redisEventStore;
 
         public SaveTest()
         {
@@ -31,7 +32,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             _eventList = new List<TestEvent> { new TestEvent {Id = "12345"} };
             _messageQueue = A.Fake<IMessageQueue>();
             var database = A.Fake<IDatabase>(); 
-            _redisEventStore = new EventStore.RedisEventStore(_redis, "test", _messageQueue);
+            _redisEventStore = new DataStores.RedisEventStore(_redis, "test", _messageQueue);
 
             A.CallTo(() => _redis.Database).Returns(database);
             A.CallTo(() => _redis.Database.CreateTransaction(null)).Returns(_trans);
@@ -132,7 +133,7 @@ namespace Learning.EventStore.Test.RedisEventStore
 
             try
             {
-                new EventStore.RedisEventStore(_redis, settings, _messageQueue);
+                new DataStores.RedisEventStore(_redis, settings, _messageQueue);
                 Assert.Fail("Should have thrown ArgumentException");
             }
             catch (ArgumentException e)

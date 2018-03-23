@@ -28,9 +28,10 @@ namespace Learning.EventStore.Domain
                 var i = 0;
                 foreach (var @event in changes)
                 {
+                    var aggregateType = GetType();
                     if (string.IsNullOrEmpty(@event.Id) && string.IsNullOrEmpty(Id))
                     {
-                        throw new AggregateOrEventMissingIdException(GetType(), @event.GetType());
+                        throw new AggregateOrEventMissingIdException(aggregateType, @event.GetType());
                     }
                     if (string.IsNullOrEmpty(@event.Id))
                     {
@@ -39,6 +40,7 @@ namespace Learning.EventStore.Domain
                     i++;
                     @event.Version = Version + i;
                     @event.TimeStamp = DateTimeOffset.UtcNow;
+                    @event.AggregateType = aggregateType.Name;
                 }
                 Version = Version + _changes.Count;
                 _changes.Clear();

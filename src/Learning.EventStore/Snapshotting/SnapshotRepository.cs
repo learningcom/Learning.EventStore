@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Infrastructure;
 
@@ -46,7 +47,8 @@ namespace Learning.EventStore.Snapshotting
                 return await _repository.GetAsync<T>(aggregateId).ConfigureAwait(false);
             }
 
-            var events = (await _eventStore.GetAsync(aggregateId, snapshotVersion).ConfigureAwait(false)).Where(desc => desc.Version > snapshotVersion);
+            var aggregateType = typeof(T).Name;
+            var events = (await _eventStore.GetAsync(aggregateId, aggregateType, snapshotVersion).ConfigureAwait(false)).Where(desc => desc.Version > snapshotVersion);
             aggregate.LoadFromHistory(events);
 
             return aggregate;

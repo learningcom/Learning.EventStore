@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Snapshotting;
 using Learning.EventStore.Test.Mocks;

@@ -16,8 +16,8 @@ namespace Learning.EventStore.Common
         Task<long> HashLengthAsync(RedisKey key);
         Task HashSetAsync(RedisKey key, HashEntry[] value);
         Task<bool> SetAddAsync(RedisKey key, RedisValue value);
-        Task<RedisValue> ListRightPopLeftPushAsync(RedisKey source, RedisKey destination);
-        Task<long> ListRemoveAsync(RedisKey key, RedisValue value);
+        RedisValue ListRightPopLeftPush(RedisKey source, RedisKey destination);
+        long ListRemove(RedisKey key, RedisValue value);
         Task PublishAsync(RedisChannel channel, RedisValue value);
         Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler);
         Task<string> StringGetAsync(string key);
