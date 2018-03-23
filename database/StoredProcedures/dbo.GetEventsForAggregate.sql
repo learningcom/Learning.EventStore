@@ -14,7 +14,7 @@ GO
 **************************************************************************************************/
 CREATE procedure [dbo].[GetEventsForAggregate]
 (
-	@AggregateId [varchar] (255) ,
+    @AggregateId [varchar] (255) ,
     @ApplicationName [varchar] (255) ,
     @AggregateType [varchar] (255) ,
     @FromVersion [int] = 1
