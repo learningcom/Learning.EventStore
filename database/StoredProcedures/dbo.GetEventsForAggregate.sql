@@ -21,7 +21,7 @@ CREATE procedure [dbo].[GetEventsForAggregate]
 )
 AS
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
     SELECT e.EventData
     FROM dbo.Event e
@@ -29,7 +29,6 @@ BEGIN
     WHERE ag.AggregateId = @AggregateId 
         AND e.[Version] > @FromVersion
     ORDER BY e.[Version] ASC
-
 END;
 GO
 GRANT EXECUTE ON  [dbo].[GetEventsForAggregate] TO [lc_ReaderWriter]
