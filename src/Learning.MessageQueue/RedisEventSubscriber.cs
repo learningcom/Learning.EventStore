@@ -70,10 +70,9 @@ namespace Learning.MessageQueue
                 catch (Exception e)
                 {
 #if !NET46 && !NET452
-                    _logger.LogError($"{e.Message}\n{e.StackTrace}", e);
+                    _logger?.LogError($"{e.Message}\n{e.StackTrace}", e);
 #endif
                     throw;
-             
                 }
             }
 
