@@ -1,18 +1,18 @@
 ﻿using System.Data;
-using System.Data.SqlClient;
+using Npgsql;
 
 namespace Learning.EventStore.Common.Sql
 {
-    public class SqlEventStoreSettings
+    public class PostgresEventStoreSettings : ISqlEventStoreSettings
     {
-        public SqlEventStoreSettings(SqlConnectionStringBuilder connectionStringBuilder, string applicationName)
+        public PostgresEventStoreSettings(NpgsqlConnectionStringBuilder connectionStringBuilder, string applicationName)
         {
             WriteConnectionString = connectionStringBuilder.ConnectionString;
-            connectionStringBuilder.ApplicationIntent = ApplicationIntent.ReadOnly;
             ReadConnectionString = connectionStringBuilder.ConnectionString;
             ApplicationName = applicationName;
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// The name of the application using the event store
         /// </summary>
@@ -24,24 +24,19 @@ namespace Learning.EventStore.Common.Sql
         public string WriteConnectionString { get; }
 
         /// <summary>
-        /// The connection string for reading from SQL. Has ApplicationIntent set to ReadOnly so that read only replicas will be used.
+        /// The connection string for reading from SQL.
         /// </summary>
         public string ReadConnectionString { get; }
 
         /// <summary>
         /// SQL for retrieving events
         /// </summary>
-        public string GetSql { get; set; } = "[dbo].[GetEventsForAggregate]";
+        public string GetSql { get; set; } = "get_events_for_aggregate";
 
         /// <summary>
         /// SQL for saving events
         /// </summary>
-        public string SaveSql { get; set; } = "[dbo].[SaveEventForAggregate]";
-
-        /// <summary>
-        /// SQL for deleting events
-        /// </summary>
-        public string DeleteSql { get; set; } = "[dbo].[DeleteEvent]";
+        public string SaveSql { get; set; } = "save_event_for_aggregate";
 
         /// <summary>
         /// The CommandType of the SQL calls. Defaults to StoredProcedure

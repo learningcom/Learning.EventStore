@@ -1,26 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Learning.MessageQueue;
 using Newtonsoft.Json;
 using System.Linq;
-using System.Transactions;
-using Dapper;
 using Learning.EventStore.Common.Sql;
 
 namespace Learning.EventStore.DataStores
 {
     public class SqlEventStore : IEventStore
     {
-        private readonly SqlEventStoreSettings _settings;
+        private readonly ISqlEventStoreSettings _settings;
         private readonly IMessageQueue _messageQueue;
         private readonly ISqlConnectionFactory _sqlConnectionFactory;
         private readonly IDapperWrapper _dapper;
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
-        public SqlEventStore(IMessageQueue messageQueue, ISqlConnectionFactory sqlConnectionFactory, IDapperWrapper dapper, SqlEventStoreSettings settings)
+        public SqlEventStore(IMessageQueue messageQueue, ISqlConnectionFactory sqlConnectionFactory, IDapperWrapper dapper, ISqlEventStoreSettings settings)
         {
             _settings = settings;
             _messageQueue = messageQueue;
@@ -43,7 +39,7 @@ namespace Learning.EventStore.DataStores
                     Version = @event.Version,
                     TimeStamp = @event.TimeStamp,
                     EventType = eventType,
-                    EventData = eventData,
+                    EventData = eventData
                 };
 
                 using (var conn = _sqlConnectionFactory.GetWriteConnection())
@@ -73,7 +69,7 @@ namespace Learning.EventStore.DataStores
             using (var conn = _sqlConnectionFactory.GetReadConnection())
             {
                 conn.Open();
-                result = await _dapper.QueryAsync<string>(conn, _settings.GetSql, new { AggregateId = aggregateId, Applicationname = _settings.ApplicationName, AggregateType = aggregateType, FromVersion = fromVersion }, _settings.CommandType).ConfigureAwait(false);
+                result = await _dapper.QueryAsync<string>(conn, _settings.GetSql, new { AggregateId = aggregateId, _settings.ApplicationName, AggregateType = aggregateType, FromVersion = fromVersion }, _settings.CommandType).ConfigureAwait(false);
             }
 
             var events = result.Select(serializedEvent => 

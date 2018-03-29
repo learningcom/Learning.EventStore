@@ -36,7 +36,8 @@ namespace Learning.EventStore.Test.SqlServerEventStore
             A.CallTo(() => sqlConnectionFactory.GetWriteConnection()).Returns(_writeDbConnection);
             _eventList = new List<TestEvent> {new TestEvent {Id = "12345"}};
             _messageQueue = A.Fake<IMessageQueue>();
-            var settings = new SqlEventStoreSettings(new SqlConnectionStringBuilder(), "TestApp");
+            var settings = A.Fake<ISqlEventStoreSettings>();
+            A.CallTo(() => settings.CommandType).Returns(CommandType.StoredProcedure);
             _sqlEventStore = new SqlEventStore(_messageQueue, sqlConnectionFactory, _dapper, settings);
 
             var jsonSerializerSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};

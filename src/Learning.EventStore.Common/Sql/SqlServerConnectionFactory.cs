@@ -3,12 +3,12 @@ using System.Data.SqlClient;
 
 namespace Learning.EventStore.Common.Sql
 {
-    public class SqlConnectionFactory : ISqlConnectionFactory
+    public class SqlServerConnectionFactory : ISqlConnectionFactory
     {
         private readonly string _readConnectionString;
         private readonly string _writeConnectionString;
 
-        public SqlConnectionFactory(SqlEventStoreSettings settings)
+        public SqlServerConnectionFactory(SqlServerEventStoreSettings settings)
         {
             _readConnectionString = settings.ReadConnectionString;
             _writeConnectionString = settings.WriteConnectionString;

@@ -24,7 +24,8 @@ namespace Learning.EventStore.Test.SqlServerEventStore
             var dapper = A.Fake<IDapperWrapper>();
             A.CallTo(() => sqlConnectionFactory.GetReadConnection()).Returns(readDbConnection);
             var messageQueue = A.Fake<IMessageQueue>();
-            var settings = new SqlEventStoreSettings(new SqlConnectionStringBuilder(), "TestApp");
+            var settings = A.Fake<ISqlEventStoreSettings>();
+            A.CallTo(() => settings.CommandType).Returns(CommandType.StoredProcedure);
             var sqlEventStore = new DataStores.SqlEventStore(messageQueue, sqlConnectionFactory, dapper, settings);
             var jsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
             var evenList = new List<string>
