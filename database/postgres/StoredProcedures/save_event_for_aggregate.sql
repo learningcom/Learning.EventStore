@@ -18,13 +18,13 @@ BEGIN
                         AND application_name = "ApplicationName");
 	
     IF _aggregate_key IS NULL THEN        
-		INSERT INTO aggregate
-		(
+        INSERT INTO aggregate
+        (
             aggregate_id, 
             aggregate_type,
             application_name
-		)
-		SELECT "AggregateId",
+        )
+        SELECT "AggregateId",
                 "AggregateType", 
                 "ApplicationName";
 
