@@ -28,8 +28,8 @@ BEGIN
                 "AggregateType", 
                 "ApplicationName";
 
-		_aggregate_key := LASTVAL();
-	END IF;
+        _aggregate_key := LASTVAL();
+    END IF;
 
     INSERT INTO event
     (
