@@ -20,9 +20,9 @@ BEGIN
     IF _aggregate_key IS NULL THEN        
 		INSERT INTO aggregate
 		(
-			aggregate_id, 
-			aggregate_type,
-			application_name
+            aggregate_id, 
+            aggregate_type,
+            application_name
 		)
 		SELECT "AggregateId",
                 "AggregateType", 
