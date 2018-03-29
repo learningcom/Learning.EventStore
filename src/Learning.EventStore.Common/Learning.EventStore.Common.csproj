@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Sql/PostgresConnectionFactory.cs" Condition=" '$(TargetFramework)' != 'netstandard2.0' " />
+    <Compile Remove="Sql/PostgresEventStoreSettings.cs" Condition=" '$(TargetFramework)' != 'netstandard2.0' " />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" Version="1.50.4" />
     <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
@@ -22,4 +27,9 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
+  
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="Npgsql" Version="3.2.7" />
+  </ItemGroup>
+
 </Project>

@@ -1,34 +1,34 @@
 CREATE OR REPLACE FUNCTION save_event_for_aggregate
 (
-    aggregate_id varchar(255), 
-    aggregate_type varchar(255),
-    application_name varchar(255),
-    version int,
-    time_stamp timestamp,
-    event_type varchar(255) ,
-    event_data jsonb
+    "AggregateId" varchar(255), 
+    "AggregateType" varchar(255),
+    "ApplicationName" varchar(255),
+    "Version" int,
+    "TimeStamp" timestamp with time zone,
+    "EventType" varchar(255),
+    "EventData" text
 )
 RETURNS void AS $$
-DECLARE aggregate_key bigint;
+DECLARE _aggregate_key bigint;
 BEGIN
-    aggregate_key := (SELECT aggregate_key 
+    _aggregate_key := (SELECT aggregate_key 
 						FROM aggregate 
-						WHERE aggregate_id = aggregate_id
-						AND aggregate_type = aggregate_type
-						AND application_name = application_name);
+						WHERE aggregate_id = "AggregateId"
+						AND aggregate_type = "AggregateType"
+						AND application_name = "ApplicationName");
 	
-    IF aggregate_key IS NULL THEN        
+    IF _aggregate_key IS NULL THEN        
 		INSERT INTO aggregate
 		(
 			aggregate_id, 
 			aggregate_type,
 			application_name
 		)
-		SELECT aggregate_id,
-				aggregate_type, 
-				application_name;
+		SELECT "AggregateId",
+				"AggregateType", 
+				"ApplicationName";
 
-		aggregate_key := LASTVAL();
+		_aggregate_key := LASTVAL();
 	END IF;
 
     INSERT INTO event
@@ -41,12 +41,11 @@ BEGIN
     )
     VALUES
     (
-        aggregate_key,
-        time_stamp,
-        version,
-        event_type,
-        event_data
+        _aggregate_key,
+        "TimeStamp",
+        "Version",
+        "EventType",
+        to_json("EventData"::text)
     );
 END;
 $$ LANGUAGE plpgsql;
-
