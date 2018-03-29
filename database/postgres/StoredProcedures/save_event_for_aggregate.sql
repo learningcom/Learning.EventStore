@@ -12,10 +12,10 @@ RETURNS void AS $$
 DECLARE _aggregate_key bigint;
 BEGIN
     _aggregate_key := (SELECT aggregate_key 
-						FROM aggregate 
-						WHERE aggregate_id = "AggregateId"
-						AND aggregate_type = "AggregateType"
-						AND application_name = "ApplicationName");
+                        FROM aggregate 
+                        WHERE aggregate_id = "AggregateId"
+                        AND aggregate_type = "AggregateType"
+                        AND application_name = "ApplicationName");
 	
     IF _aggregate_key IS NULL THEN        
 		INSERT INTO aggregate
@@ -25,8 +25,8 @@ BEGIN
 			application_name
 		)
 		SELECT "AggregateId",
-				"AggregateType", 
-				"ApplicationName";
+                "AggregateType", 
+                "ApplicationName";
 
 		_aggregate_key := LASTVAL();
 	END IF;
