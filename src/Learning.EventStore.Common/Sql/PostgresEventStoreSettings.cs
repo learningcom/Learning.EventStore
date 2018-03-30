@@ -6,9 +6,14 @@ namespace Learning.EventStore.Common.Sql
     public class PostgresEventStoreSettings : ISqlEventStoreSettings
     {
         public PostgresEventStoreSettings(NpgsqlConnectionStringBuilder connectionStringBuilder, string applicationName)
+            : this(connectionStringBuilder.ConnectionString, connectionStringBuilder.ConnectionString, applicationName)
         {
-            WriteConnectionString = connectionStringBuilder.ConnectionString;
-            ReadConnectionString = connectionStringBuilder.ConnectionString;
+        }
+
+        public PostgresEventStoreSettings(string writeConnectionString, string readConnectionString, string applicationName)
+        {
+            WriteConnectionString = writeConnectionString;
+            ReadConnectionString = readConnectionString;
             ApplicationName = applicationName;
         }
 
