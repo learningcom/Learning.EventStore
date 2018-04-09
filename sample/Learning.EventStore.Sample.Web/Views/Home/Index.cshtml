@@ -1,0 +1,16 @@
+﻿@model IEnumerable<Learning.EventStore.Sample.Web.Models.ReadModel.Dto.InventoryItemDetails>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>All items:</h2>
+<ul>
+    @foreach (var inventoryItemDetail in Model)
+    {
+        <li>
+            @Html.ActionLink("Name: " + inventoryItemDetail.Name, "Details", new { Id = inventoryItemDetail.Id })
+        </li>
+    }
+</ul>
+@Html.ActionLink("Add", "Add")
+

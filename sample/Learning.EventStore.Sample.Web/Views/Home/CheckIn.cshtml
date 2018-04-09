@@ -1,0 +1,15 @@
+﻿@model Learning.EventStore.Sample.Web.Models.ReadModel.Dto.InventoryItemDetails
+@{
+    ViewData["Title"] = "CheckIn";
+}
+
+<h2>CheckIn</h2>
+@using (Html.BeginForm())
+{
+    <p>
+        @Html.Hidden("Id", Model.Id)
+        Number: @Html.TextBox("Number")<br />
+        <button name="submit">Submit</button>
+        <a href="/">Back</a>
+    </p>
+}
