@@ -45,7 +45,7 @@ BEGIN
         "TimeStamp",
         "Version",
         "EventType",
-        to_json("EventData"::text)
+        to_jsonb("EventData"::jsonb)
     );
 END;
 $$ LANGUAGE plpgsql;
