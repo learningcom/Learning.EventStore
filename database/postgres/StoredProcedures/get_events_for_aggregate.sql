@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION get_events_for_aggregate
 RETURNS SETOF text AS $$
 BEGIN
     RETURN query
-    SELECT e.event_data::jsonb #>> '{}'
+    SELECT e.event_data #>> '{}'
     FROM event e
     INNER JOIN aggregate ag ON e.aggregate_key = ag.aggregate_key 
     WHERE ag.aggregate_id = "AggregateId"
