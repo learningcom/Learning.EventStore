@@ -14,7 +14,12 @@ namespace Learning.EventStore.DataStores
         private readonly IMessageQueue _messageQueue;
         private readonly ISqlConnectionFactory _sqlConnectionFactory;
         private readonly IDapperWrapper _dapper;
-        private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+        private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            // Postgres JSONB doesn't guarantee order of fields is maintained. Json.net relies on the $type field being first in the object by default. This allows the $type metadata field to be anywhere.
+            MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead
+        };
 
         public SqlEventStore(IMessageQueue messageQueue, ISqlConnectionFactory sqlConnectionFactory, IDapperWrapper dapper, ISqlEventStoreSettings settings)
         {
