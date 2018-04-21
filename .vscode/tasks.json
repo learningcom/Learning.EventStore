@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/sample/Learning.EventStore.Sample.Web/Learning.EventStore.Sample.Web.csproj"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
