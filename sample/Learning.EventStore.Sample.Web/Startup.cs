@@ -79,7 +79,7 @@ namespace Learning.EventStore.Sample.Web
             services.AddSingleton<IMessageQueue>(y => new RedisMessageQueue(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName));
             services.AddSingleton<IEventStore>(y => new RedisEventStore(y.GetService<IRedisClient>(), eventStoreSettings, y.GetService<IMessageQueue>()));
             services.AddSingleton<ICache, MemoryCache>();
-            services.AddScoped<IRepository>(y => new CacheRepository(new Repository(y.GetService<IEventStore>()), y.GetService<IEventStore>(), y.GetService<ICache>()));
+            services.AddScoped<IRepository>(y => new Repository(y.GetService<IEventStore>()));
 
             // Register subscriptions
             var serviceProvider = services.BuildServiceProvider();
