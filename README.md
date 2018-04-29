@@ -4,7 +4,7 @@ Learning.EventStore is a framework for CQRS, Eventsourcing, and messaging based 
 
 # Installation #
 
-There are three separate libraries included in this repository. All three are available as Nuget packages and can be install from there.
+There are three separate libraries included in this repository. All three are available as Nuget packages and can be installed from there.
 
 * [Learning.Cqrs](https://www.nuget.org/packages/Learning.Cqrs/)
 * [Learning.MessageQueue](https://www.nuget.org/packages/Learning.MessageQueue/)
