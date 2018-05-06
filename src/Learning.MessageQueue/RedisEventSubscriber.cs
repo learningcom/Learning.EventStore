@@ -59,9 +59,19 @@ namespace Learning.MessageQueue
                     // if the eventData is null, then the event has already been processed by another instance, skip further execution
                     if (eventData.HasValue)
                     {
-                        //Deserialize the event data and invoke the handler
-                        var message = JsonConvert.DeserializeObject<T>(eventData);
-                        callBack.Invoke(message);
+                        try
+                        {
+                            //Deserialize the event data and invoke the handler
+                            var message = JsonConvert.DeserializeObject<T>(eventData);
+                            callBack.Invoke(message);
+                        }
+                        catch(Exception)
+                        {
+                            var deadLetterListKey = $"{_keyPrefix}:{{{eventKey}}}:DeadLetters";
+                            _redis.ListRightPopLeftPush(processingListKey, deadLetterListKey);
+
+                            throw;
+                        }
 
                         //Remove the event from the 'processing' list.
                         _redis.ListRemove(processingListKey, eventData);
