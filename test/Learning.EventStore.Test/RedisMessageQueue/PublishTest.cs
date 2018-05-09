@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using FakeItEasy;
-using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
 using Learning.MessageQueue.Exceptions;

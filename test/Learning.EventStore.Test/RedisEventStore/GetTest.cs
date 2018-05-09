@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
-using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Test.Mocks;
 using Learning.MessageQueue;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

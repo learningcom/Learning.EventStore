@@ -1,6 +1,6 @@
 ﻿using System;
 using FakeItEasy;
-using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Test.Mocks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StackExchange.Redis;
