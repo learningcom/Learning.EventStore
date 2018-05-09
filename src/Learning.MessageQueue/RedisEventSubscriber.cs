@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 #if !NET46 && !NET452
 using Microsoft.Extensions.Logging;
 #endif

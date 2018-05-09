@@ -1,5 +1,6 @@
 ﻿using System;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain;
 using Newtonsoft.Json;
 
