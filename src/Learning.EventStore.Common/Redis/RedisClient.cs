@@ -32,7 +32,6 @@ namespace Learning.EventStore.Common.Redis
         public RedisClient(Lazy<IConnectionMultiplexer> redis)
             : this(redis, 3)
         {
-            _redis = redis;
         }
 
         public RedisClient(Lazy<IConnectionMultiplexer> redis, int retryCount)
