@@ -89,15 +89,15 @@ namespace Learning.MessageQueue
 
             //Grab any unprocessed events and process them
             //Ensures that events that were fired before the application was started will be picked up 
-            var awaitingEvents = await _redis.ListLengthAsync(publishedListKey);
-            if (awaitingEvents > 0)
-            {
-                var events = await _redis.ListRangeAsync(publishedListKey, 0, awaitingEvents);
-                foreach (var @event in events)
-                {
-                    RedisCallback(eventKey, @event);
-                }
-            }
+            //var awaitingEvents = await _redis.ListLengthAsync(publishedListKey);
+            //if (awaitingEvents > 0)
+            //{
+            //    var events = await _redis.ListRangeAsync(publishedListKey, 0, awaitingEvents);
+            //    foreach (var @event in events)
+            //    {
+            //        RedisCallback(eventKey, @event);
+            //    }
+            //}
 
             //Subscribe to the event
             await _redis.SubscribeAsync(eventKey, RedisCallback).ConfigureAwait(false);
