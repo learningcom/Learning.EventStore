@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Polly;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Common.Redis
@@ -137,7 +136,7 @@ namespace Learning.EventStore.Common.Redis
 
         public async Task<bool> KeyExistsAsync(string key)
         {
-            var result = await RDatabase.KeyExistsAsync(key).ConfigureAwait(false);
+            var result = await Database.KeyExistsAsync(key).ConfigureAwait(false);
 
             return result;
         }
