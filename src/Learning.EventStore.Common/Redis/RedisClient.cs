@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Polly;
 using StackExchange.Redis;
 
 namespace Learning.EventStore.Common.Redis
