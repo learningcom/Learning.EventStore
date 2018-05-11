@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.MessageQueue</AssemblyTitle>
-    <VersionPrefix>2.1.1</VersionPrefix>
+    <VersionPrefix>2.1.3</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net46;net452</TargetFrameworks>
     <AssemblyName>Learning.MessageQueue</AssemblyName>
     <PackageId>Learning.MessageQueue</PackageId>
@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Polly" Version="6.0.1" />
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
   </ItemGroup>
