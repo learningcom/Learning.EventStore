@@ -58,11 +58,5 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             A.CallTo(() => _redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", _serializedEvent))
                 .MustHaveHappened();
         }
-
-        //[TestMethod]
-        //public void ProcessesAllEventsInPublishedList()
-        //{
-        //    A.CallTo(() => _redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened(Repeated.Exactly.Times(3));
-        //}
     }
 }
