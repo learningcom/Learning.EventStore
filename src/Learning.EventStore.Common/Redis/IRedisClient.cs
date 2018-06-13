@@ -29,5 +29,6 @@ namespace Learning.EventStore.Common.Redis
         Task<bool> HashDeleteAsync(string key, string field);
         Task<bool> HashExistsAsync(string key, string field);
         Task<long> ListRemoveAsync(string key, string value, long count);
+        void ListLeftPush(string key, string value);
     }
 }

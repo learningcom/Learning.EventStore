@@ -175,5 +175,10 @@ namespace Learning.EventStore.Common.Redis
             return result;
         }
 
+        public void ListLeftPush(string key, string value)
+        {
+            RetryPolicy.Execute(() => Database.ListLeftPush(key, value));
+        }
+
     }
 }
