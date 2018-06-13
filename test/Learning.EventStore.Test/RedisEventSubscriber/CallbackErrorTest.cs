@@ -43,7 +43,8 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             {
                 Assert.AreEqual("One or more errors occurred. (Oh No!)", e.Message);
                 A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
-                A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:ProcessingEvents", "TestPrefix:{Test:TestEvent}:DeadLetters")).MustHaveHappened();
+                A.CallTo(() => redis.ListLeftPush("TestPrefix:{Test:TestEvent}:DeadLetters", serializedEvent)).MustHaveHappened();
+                A.CallTo(() => redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", serializedEvent)).MustHaveHappened();
             }
         }
     }

@@ -66,16 +66,18 @@ namespace Learning.MessageQueue
                             var message = JsonConvert.DeserializeObject<T>(eventData);
                             callBack.Invoke(message);
                         }
-                        catch(Exception)
+                        catch (Exception)
                         {
                             var deadLetterListKey = $"{_keyPrefix}:{{{eventKey}}}:DeadLetters";
-                            _redis.ListRightPopLeftPush(processingListKey, deadLetterListKey);
+                            _redis.ListLeftPush(deadLetterListKey, eventData);
 
                             throw;
                         }
-
-                        //Remove the event from the 'processing' list.
-                        _redis.ListRemove(processingListKey, eventData);
+                        finally
+                        {
+                            //Remove the event from the 'processing' list.
+                            _redis.ListRemove(processingListKey, eventData);
+                        }
                     }
                 }
                 catch (Exception e)
