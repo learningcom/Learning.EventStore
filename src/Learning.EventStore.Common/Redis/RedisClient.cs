@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace Learning.EventStore.Common.Redis
 {
-    public class RedisClient : IRedisClient
+    public class RedisClient : IRedisClient, IDisposable
     {
         private readonly Lazy<IConnectionMultiplexer> _redis;
 
@@ -180,5 +180,26 @@ namespace Learning.EventStore.Common.Redis
             RetryPolicy.Execute(() => Database.ListLeftPush(key, value));
         }
 
+        public async Task<string> ListGetByIndexAsync(string key, int index)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => Database.ListGetByIndexAsync(key, index)).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task ListRemoveAsync(string key, RedisValue value)
+        {
+            await RetryPolicyAsync.ExecuteAsync(() => Database.ListRemoveAsync(key, value)).ConfigureAwait(false);
+        }
+
+        public async Task StringIncrementAsync(string key)
+        {
+            await RetryPolicyAsync.ExecuteAsync(() => Database.StringIncrementAsync(key)).ConfigureAwait(false);
+        }
+
+        public void Dispose()
+        {
+            _redis.Value.Dispose();
+        }
     }
 }

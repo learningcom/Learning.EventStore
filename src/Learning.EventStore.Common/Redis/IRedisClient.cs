@@ -30,5 +30,8 @@ namespace Learning.EventStore.Common.Redis
         Task<bool> HashExistsAsync(string key, string field);
         Task<long> ListRemoveAsync(string key, string value, long count);
         void ListLeftPush(string key, string value);
+        Task<string> ListGetByIndexAsync(string key, int index);
+        Task ListRemoveAsync(string key, RedisValue value);
+        Task StringIncrementAsync(string key);
     }
 }
