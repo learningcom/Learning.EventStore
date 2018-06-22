@@ -192,9 +192,28 @@ namespace Learning.EventStore.Common.Redis
             await RetryPolicyAsync.ExecuteAsync(() => Database.ListRemoveAsync(key, value)).ConfigureAwait(false);
         }
 
-        public async Task StringIncrementAsync(string key)
+        public async Task HashIncrementAsync(string key, string field)
         {
-            await RetryPolicyAsync.ExecuteAsync(() => Database.StringIncrementAsync(key)).ConfigureAwait(false);
+            await RetryPolicyAsync.ExecuteAsync(() => Database.HashIncrementAsync(key, field)).ConfigureAwait(false);
+        }
+
+        public async Task<HashEntry[]> HashGetAllAsync(string key)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => Database.HashGetAllAsync(key)).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public ITransaction CreateTransaction()
+        {
+            return Database.CreateTransaction();
+        }
+
+        public async Task<bool> ExecuteTransactionAsync(ITransaction trans)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => trans.ExecuteAsync()).ConfigureAwait(false);
+
+            return result;
         }
 
         public void Dispose()

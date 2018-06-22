@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common.Redis;
 using Learning.MessageQueue.Messages;
+using Learning.MessageQueue.Retry;
 using StackExchange.Redis;
 
 namespace Learning.MessageQueue.Repository
@@ -11,6 +13,10 @@ namespace Learning.MessageQueue.Repository
         private readonly IRedisClient _redisClient;
         private readonly string _environment;
         private readonly string _keyPrefix;
+
+        private const string RetryCountFieldName = "RetryCount";
+        private const string LastRetryTimeFieldName = "LastRetryTime";
+        private const string LastExceptionFieldName = "LastException";
 
         public MessageQueueRepository(IRedisClient redisClient, string environment, string keyPrefix)
         {
@@ -36,27 +42,45 @@ namespace Learning.MessageQueue.Repository
 
             return unprocessedEvent;
         }
-        public async Task DeleteFromDeadLetterList<T>(RedisValue valueToRemove) where T : IMessage
+
+        public async Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, T @event) where T : IMessage
         {
             var deadLetterListKey = GetDeadLetterListKey<T>();
+            var retryDataHashKey = GetRetryDataHashKey(@event);
+            var tran = _redisClient.CreateTransaction();
 
-            await _redisClient.ListRemoveAsync(deadLetterListKey, valueToRemove).ConfigureAwait(false);
+            tran.ListRemoveAsync(deadLetterListKey, valueToRemove);
+            tran.KeyDeleteAsync(retryDataHashKey);
+
+            await ExcecuteTransaction(tran, @event.Id).ConfigureAwait(false);
         }
 
-        public async Task IncrementRetryCounter(IMessage @event)
+        public async Task UpdateRetryData(IMessage @event, string exceptionMessage)
         {
-            var retryCounterKey = GetRetryCounterKey(@event);
+            var retryDataHashKey = GetRetryDataHashKey(@event);
+            var tran = _redisClient.CreateTransaction();
 
-            await _redisClient.StringIncrementAsync(retryCounterKey).ConfigureAwait(false); ;
+            tran.HashIncrementAsync(retryDataHashKey, RetryCountFieldName);
+            tran.HashSetAsync(retryDataHashKey, LastExceptionFieldName, exceptionMessage);
+            tran.HashSetAsync(retryDataHashKey, LastRetryTimeFieldName, DateTimeOffset.UtcNow.ToString());
+
+            await ExcecuteTransaction(tran, @event.Id).ConfigureAwait(false);
         }
 
-        public async Task<int> GetRetryCounter(IMessage @event)
+        public async Task<RetryData> GetRetryData(IMessage @event)
         {
-            var retryCounterKey = GetRetryCounterKey(@event);
-            var retryCountString = await _redisClient.StringGetAsync(retryCounterKey).ConfigureAwait(false);
-            int.TryParse(retryCountString, out var retryCount);
+            var retryDataHashName = GetRetryDataHashKey(@event);
+            var hashData = await _redisClient.HashGetAllAsync(retryDataHashName).ConfigureAwait(false);
+            var lastRetryTime = hashData.First(x => x.Name == LastRetryTimeFieldName).Value;
+            var retryCount = hashData.First(x => x.Name == RetryCountFieldName).Value;
 
-            return retryCount;
+            var data = new RetryData
+            {
+                RetryCount = retryCount == RedisValue.Null ? 0 : int.Parse(retryCount),
+                LastRetryTime = lastRetryTime == RedisValue.Null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(lastRetryTime)
+            };
+
+            return data;
         }
 
         private string GetDeadLetterListKey<T>() where T : IMessage
@@ -68,13 +92,23 @@ namespace Learning.MessageQueue.Repository
             return processingListKey;
         }
 
-        private string GetRetryCounterKey(IMessage @event)
+        private string GetRetryDataHashKey(IMessage @event)
         {
             var eventType = @event.GetType().Name;
             var eventKey = $"{_environment}:{eventType}";
-            var retryCounterKey = $"{_keyPrefix}:{{{eventKey}}}:RetryCounter:{@event.Id}:{@event.TimeStamp}";
+            var retryDataHashName = $"RetryData:{eventKey}:{@event.Id}";
 
-            return retryCounterKey;
+            return retryDataHashName;
+        }
+
+        private async Task ExcecuteTransaction(ITransaction tran, string aggregateId)
+        {
+            var result = await _redisClient.ExecuteTransactionAsync(tran).ConfigureAwait(false);
+
+            if (!result)
+            {
+                throw new Exception($"Redis transaction failed for AggregateId {aggregateId}");
+            }
         }
     }
 }

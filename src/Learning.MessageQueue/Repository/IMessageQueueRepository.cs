@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Learning.MessageQueue.Messages;
+using Learning.MessageQueue.Retry;
 using StackExchange.Redis;
 
 namespace Learning.MessageQueue.Repository
@@ -13,10 +11,10 @@ namespace Learning.MessageQueue.Repository
 
         Task<RedisValue> GetUnprocessedMessage<T>(int index) where T : IMessage;
 
-        Task DeleteFromDeadLetterList<T>(RedisValue valueToRemove) where T : IMessage;
+        Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, T @event) where T : IMessage;
 
-        Task IncrementRetryCounter(IMessage @event);
+        Task UpdateRetryData(IMessage @event, string exceptionMessage);
 
-        Task<int> GetRetryCounter(IMessage @event);
+        Task<RetryData> GetRetryData(IMessage @event);
     }
 }

@@ -24,7 +24,11 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var message2 = JsonConvert.SerializeObject(new TestMessage { Id = "1" });
             var message3 = JsonConvert.SerializeObject(new TestMessage { Id = "2" });
             A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).ReturnsNextFromSequence(message1, message2, message3);
-            A.CallTo(() => eventStoreRepository.GetRetryCounter(A<IMessage>._)).Returns(0);
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1)
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
             var retryClass = new TestRetryClass(logger, eventStoreRepository);
             var callBack1Called = false;
             var callBack2Called = false;
@@ -51,7 +55,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             Assert.IsTrue(callBack1Called);
             Assert.IsTrue(callBack2Called);
             Assert.IsTrue(callBack3Called);
-            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterList<TestMessage>(A<RedisValue>._))
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<TestMessage>._))
                 .MustHaveHappened(Repeated.Exactly.Times(3));
         }
 
@@ -63,14 +67,18 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
             var message = new TestMessage { Id = "0" };
             A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
-            A.CallTo(() => eventStoreRepository.GetRetryCounter(A<IMessage>._)).Returns(0);
-            var retryClass = new TestRetryClass(logger, eventStoreRepository, 3);
+            var retryClass = new TestRetryClass(logger, eventStoreRepository);
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1)
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
 
             await retryClass.ExecuteRetry<TestMessage>(async @event => {
                 await Task.Run(() => throw new Exception("Oh No!"));
             });
 
-            A.CallTo(() => eventStoreRepository.IncrementRetryCounter(A<IMessage>._)).MustHaveHappened();
+            A.CallTo(() => eventStoreRepository.UpdateRetryData(A<IMessage>._, A<string>._)).MustHaveHappened();
             A.CallTo(() => logger.Log(LogLevel.Warning, 0, A<object>._, null, A<Func<object, Exception, string>>._)).MustHaveHappened();
         }
 
@@ -82,8 +90,61 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
             var message = new TestMessage { Id = "0" };
             A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
-            A.CallTo(() => eventStoreRepository.GetRetryCounter(A<IMessage>._)).Returns(3);
-            var retryClass = new TestRetryClass(logger, eventStoreRepository, 3);
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
+                RetryCount = 6
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
+            var retryClass = new TestRetryClass(logger, eventStoreRepository);
+            var callBackCalled = false;
+
+            await retryClass.ExecuteRetry<TestMessage>(async @event => {
+                await Task.Run(() => { callBackCalled = true; });
+            });
+
+            Assert.IsFalse(callBackCalled);
+        }
+
+        [TestMethod]
+        public async Task CallsCallbackIfRetryCounterIsGreaterThanThresholdButRetryForHoursIsSetAndHasNotBeenExceeded()
+        {
+            var logger = A.Fake<ILogger>();
+            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
+            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
+            var message = new TestRetryHoursMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-1)};
+            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
+                RetryCount = 6
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
+            var retryClass = new TestRetryClass(logger, eventStoreRepository);
+            var callBackCalled = false;
+
+            await retryClass.ExecuteRetry<TestMessage>(async @event => {
+                await Task.Run(() => { callBackCalled = true; });
+            });
+
+            Assert.IsTrue(callBackCalled);
+        }
+
+        [TestMethod]
+        public async Task DoesNotCallCallbackIfRetryForHoursIsSetAndHasBeenExceeded()
+        {
+            var logger = A.Fake<ILogger>();
+            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
+            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
+            var message = new TestRetryHoursMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-3) };
+            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
+                RetryCount = 6
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
+            var retryClass = new TestRetryClass(logger, eventStoreRepository);
             var callBackCalled = false;
 
             await retryClass.ExecuteRetry<TestMessage>(async @event => {
@@ -100,16 +161,14 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             : base(logger, eventStoreRepository)
         {
         }
-
-        public TestRetryClass(ILogger logger, IMessageQueueRepository eventStoreRepository, int retryThreshold)
-            : base(logger, eventStoreRepository, retryThreshold)
-        {
-        }
     }
 
-    public class TestMessage : IMessage
+    public class TestMessage : RetryableMessage
     {
-        public string Id { get; set; }
-        public DateTimeOffset TimeStamp { get; set; }
+    }
+
+    public class TestRetryHoursMessage : RetryableMessage
+    {
+        public override int RetryForHours { get; set; } = 2;
     }
 }

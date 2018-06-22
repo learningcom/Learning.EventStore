@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Learning.EventStore.Common.Retry;
 using Learning.MessageQueue.Messages;
 using Learning.MessageQueue.Repository;
 #if !NET46 && !NET452
@@ -12,33 +13,20 @@ namespace Learning.MessageQueue.Retry
     public class Retry : IRetry
     {
         private readonly IMessageQueueRepository _messageQueueRepository;
-        private readonly int _retryThreshold;
 
 #if !NET46 && !NET452
         private readonly ILogger _logger;
 
         protected Retry(ILogger logger, IMessageQueueRepository messageQueueRepository)
-            : this(logger, messageQueueRepository, 5)
-        {
-        }
-
-        protected Retry(ILogger logger, IMessageQueueRepository messageQueueRepository, int retryThreshold)
         {
             _logger = logger;
             _messageQueueRepository = messageQueueRepository;
-            _retryThreshold = retryThreshold;
         }
 #endif
 
         protected Retry(IMessageQueueRepository messageQueueRepository)
-            : this(messageQueueRepository, 5)
-        {
-        }
-
-        protected Retry(IMessageQueueRepository messageQueueRepository, int retryThreshold)
         {
             _messageQueueRepository = messageQueueRepository;
-            _retryThreshold = retryThreshold;
         }
 
         public async Task ExecuteRetry<T>(Action<T> retryAction) where T : IMessage
@@ -68,38 +56,39 @@ namespace Learning.MessageQueue.Retry
 
             for (var i = 0; i < listLength; i++)
             {
+                var indexToGet = i - eventsProcessed;
+                var eventData = await _messageQueueRepository.GetUnprocessedMessage<T>(indexToGet).ConfigureAwait(false);
+
+                if (string.IsNullOrEmpty(eventData))
+                {
+                    continue;
+                }
+
+                var @event = JsonConvert.DeserializeObject<T>(eventData);
+
                 try
                 {
-                    var indexToGet = i - eventsProcessed;
-                    var eventData = await _messageQueueRepository.GetUnprocessedMessage<T>(indexToGet).ConfigureAwait(false);
-
-                    if (string.IsNullOrEmpty(eventData))
+                    if (await ShouldRetry(@event).ConfigureAwait(false))
                     {
-                        continue;
+                        LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
+
+                        await retryAction(@event).ConfigureAwait(false);
+                        await _messageQueueRepository.DeleteFromDeadLetterQueue(eventData, @event).ConfigureAwait(false);
+                        eventsProcessed++;
+
+                        LogInformation($"Completed retry of processing for {eventType} event for Aggregate: {@event.Id}");
                     }
-
-                    var @event = JsonConvert.DeserializeObject<T>(eventData);
-
-                    var retryCount = await _messageQueueRepository.GetRetryCounter(@event).ConfigureAwait(false);
-
-                    if (retryCount >= _retryThreshold)
+                    else
                     {
                         LogInformation($"Skipping retry for event with Aggregate Id {@event.Id}; Retry threshold reached");
-
-                        continue;
                     }
-
-                    LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
-
-                    await ExecuteCallback(retryAction, @event).ConfigureAwait(false);
-                    await _messageQueueRepository.DeleteFromDeadLetterList<T>(eventData).ConfigureAwait(false);
-                    eventsProcessed++;
-
-                    LogInformation($"Completed retry of processing for {eventType} event for Aggregate: {@event.Id}");
                 }
                 catch (Exception e)
                 {
+                    var message = $"{e.Message}{Environment.NewLine}{e.StackTrace}";
+                    await _messageQueueRepository.UpdateRetryData(@event, message).ConfigureAwait(false);
                     LogWarning($"Event processing retry failed for {GetType()} with message: {e.Message}{Environment.NewLine}{e.StackTrace}");
+                    
                     errors++;
                 }
             }
@@ -107,6 +96,35 @@ namespace Learning.MessageQueue.Retry
             LogInformation($"Retry complete for {eventType}. Processed {eventsProcessed} events with {errors} errors.");
         }
 
+
+        private async Task<bool> ShouldRetry(IMessage @event)
+        {
+            if (!(@event is IRetryable retryable))
+            {
+                return false;
+            }
+
+            var retryData = await _messageQueueRepository.GetRetryData(@event).ConfigureAwait(false);
+
+            // exponential backoff
+            var mpow = (int)Math.Pow(2, retryData.RetryCount);
+            var interval = Math.Min(mpow * retryable.RetryIntervalMinutes, retryable.RetryIntervalMaxMinutes);
+            var intervalPassed = DateTimeOffset.UtcNow > retryData.LastRetryTime?.ToUniversalTime().AddMinutes(interval);
+
+            if (!intervalPassed)
+            {
+                return false;
+            }
+
+            if (retryable.RetryForHours != default(int) && 
+                DateTimeOffset.UtcNow < @event.TimeStamp.ToUniversalTime().AddHours(retryable.RetryForHours))
+            {
+                return true;
+            }
+
+            return retryData.RetryCount <= retryable.RetryLimit;
+        }
+        
         private void LogInformation(string message)
         {
 #if !NET46 && !NET452
@@ -119,19 +137,6 @@ namespace Learning.MessageQueue.Retry
 #if !NET46 && !NET452
             _logger.LogWarning(message);
 #endif
-        }
-
-        private async Task ExecuteCallback<T>(Func<T, Task> retryAction, T @event) where T : IMessage
-        {
-            try
-            {
-                await retryAction(@event).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                await _messageQueueRepository.IncrementRetryCounter(@event).ConfigureAwait(false);
-                throw;
-            }
         }
     }
 }

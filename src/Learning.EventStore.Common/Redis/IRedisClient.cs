@@ -32,6 +32,8 @@ namespace Learning.EventStore.Common.Redis
         void ListLeftPush(string key, string value);
         Task<string> ListGetByIndexAsync(string key, int index);
         Task ListRemoveAsync(string key, RedisValue value);
-        Task StringIncrementAsync(string key);
+        Task<HashEntry[]> HashGetAllAsync(string key);
+        ITransaction CreateTransaction();
+        Task<bool> ExecuteTransactionAsync(ITransaction trans);
     }
 }
