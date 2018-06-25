@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace Learning.EventStore.Common.Redis
 {
-    public class RedisClient : IRedisClient
+    public class RedisClient : IRedisClient, IDisposable
     {
         private readonly Lazy<IConnectionMultiplexer> _redis;
 
@@ -180,5 +180,45 @@ namespace Learning.EventStore.Common.Redis
             RetryPolicy.Execute(() => Database.ListLeftPush(key, value));
         }
 
+        public async Task<string> ListGetByIndexAsync(string key, int index)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => Database.ListGetByIndexAsync(key, index)).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task ListRemoveAsync(string key, RedisValue value)
+        {
+            await RetryPolicyAsync.ExecuteAsync(() => Database.ListRemoveAsync(key, value)).ConfigureAwait(false);
+        }
+
+        public async Task HashIncrementAsync(string key, string field)
+        {
+            await RetryPolicyAsync.ExecuteAsync(() => Database.HashIncrementAsync(key, field)).ConfigureAwait(false);
+        }
+
+        public async Task<HashEntry[]> HashGetAllAsync(string key)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => Database.HashGetAllAsync(key)).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public ITransaction CreateTransaction()
+        {
+            return Database.CreateTransaction();
+        }
+
+        public async Task<bool> ExecuteTransactionAsync(ITransaction trans)
+        {
+            var result = await RetryPolicyAsync.ExecuteAsync(() => trans.ExecuteAsync()).ConfigureAwait(false);
+
+            return result;
+        }
+
+        public void Dispose()
+        {
+            _redis.Value.Dispose();
+        }
     }
 }
