@@ -17,14 +17,14 @@ namespace Learning.MessageQueue.Retry
 #if !NET46 && !NET452
         private readonly ILogger _logger;
 
-        protected Retry(ILogger logger, IMessageQueueRepository messageQueueRepository)
+        public Retry(ILogger logger, IMessageQueueRepository messageQueueRepository)
         {
             _logger = logger;
             _messageQueueRepository = messageQueueRepository;
         }
 #endif
 
-        protected Retry(IMessageQueueRepository messageQueueRepository)
+        public Retry(IMessageQueueRepository messageQueueRepository)
         {
             _messageQueueRepository = messageQueueRepository;
         }
