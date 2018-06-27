@@ -67,7 +67,7 @@ namespace Learning.MessageQueue.Messages
                     {
                         LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
 
-                        CallBack(@event);
+                        RetryCallBack(@event);
                         await _messageQueueRepository.DeleteFromDeadLetterQueue(eventData, @event).ConfigureAwait(false);
                         eventsProcessed++;
 
@@ -85,6 +85,11 @@ namespace Learning.MessageQueue.Messages
             }
 
             LogInformation($"Retry complete for {eventType}. Processed {eventsProcessed} events with {errors} errors.");
+        }
+
+        protected virtual void RetryCallBack(T message)
+        {
+            CallBack(message);
         }
 
         protected virtual async Task<bool> ShouldRetry(IMessage @event)
