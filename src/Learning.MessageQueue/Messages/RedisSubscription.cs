@@ -27,13 +27,12 @@ namespace Learning.MessageQueue.Messages
 
         public virtual async Task SubscribeAsync()
         {
-            var callBack = GetCallback();
-            await _subscriber.SubscribeAsync(callBack).ConfigureAwait(false);
+            await _subscriber.SubscribeAsync((Action<T>)CallBack).ConfigureAwait(false);
             var messageName = typeof(T).Name;
             LogInformation($"{messageName} subscription created");
         }
 
-        protected abstract Action<T> GetCallback();
+        protected abstract void CallBack(T message);
 
         protected virtual void LogInformation(string message)
         {

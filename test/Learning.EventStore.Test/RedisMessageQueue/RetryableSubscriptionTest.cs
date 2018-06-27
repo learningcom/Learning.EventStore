@@ -144,22 +144,20 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             CallBack3Called = false;
         }
 
-        protected override Action<TestMessage> GetCallback()
+        protected override void CallBack(TestMessage message)
         {
-            return @event => {
-                switch (@event.Id)
-                {
-                    case "0":
-                        CallBack1Called = true;
-                        break;
-                    case "1":
-                        CallBack2Called = true;
-                        break;
-                    case "2":
-                        CallBack3Called = true;
-                        break;
-                }
-            };
+            switch (message.Id)
+            {
+                case "0":
+                    CallBack1Called = true;
+                    break;
+                case "1":
+                    CallBack2Called = true;
+                    break;
+                case "2":
+                    CallBack3Called = true;
+                    break;
+            }
         }
     }
 
@@ -177,9 +175,9 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             CallBack3Called = false;
         }
 
-        protected override Action<TestMessage> GetCallback()
+        protected override void CallBack(TestMessage message)
         {
-            return @event => throw new Exception("Oh No!");
+            throw new Exception("Oh No!");
         }
     }
 
@@ -196,22 +194,20 @@ namespace Learning.EventStore.Test.RedisMessageQueue
         {
         }
 
-        protected override Action<TestMessage> GetCallback()
+        protected override void CallBack(TestMessage message)
         {
-            return @event => {
-                switch (@event.Id)
-                {
-                    case "0":
-                        CallBack1Called = true;
-                        break;
-                    case "1":
-                        CallBack2Called = true;
-                        break;
-                    case "2":
-                        CallBack3Called = true;
-                        break;
-                }
-            };
+            switch (message.Id)
+            {
+                case "0":
+                    CallBack1Called = true;
+                    break;
+                case "1":
+                    CallBack2Called = true;
+                    break;
+                case "2":
+                    CallBack3Called = true;
+                    break;
+            }
         }
     }
 
