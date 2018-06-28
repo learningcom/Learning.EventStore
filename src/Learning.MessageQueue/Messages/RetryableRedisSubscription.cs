@@ -101,7 +101,7 @@ namespace Learning.MessageQueue.Messages
             var interval = Math.Min(mpow * RetryIntervalMinutes, RetryIntervalMaxMinutes);
             var intervalPassed = DateTimeOffset.UtcNow > retryData.LastRetryTime?.ToUniversalTime().AddMinutes(interval);
 
-            if (!intervalPassed)
+            if (!intervalPassed && retryData.RetryCount > 0)
             {
                 LogInformation($"Skipping retry for event with Aggregate Id {@event.Id}; Retry interval has not elapsed.");
                 return false;
