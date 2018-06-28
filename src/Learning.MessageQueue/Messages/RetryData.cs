@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Learning.MessageQueue.Retry
+namespace Learning.MessageQueue.Messages
 {
     public class RetryData
     {

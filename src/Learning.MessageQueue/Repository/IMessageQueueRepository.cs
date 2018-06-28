@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Learning.MessageQueue.Messages;
-using Learning.MessageQueue.Retry;
 using StackExchange.Redis;
 
 namespace Learning.MessageQueue.Repository

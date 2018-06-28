@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common.Redis;
 using Learning.MessageQueue.Messages;
-using Learning.MessageQueue.Retry;
 using StackExchange.Redis;
 
 namespace Learning.MessageQueue.Repository
@@ -71,8 +70,8 @@ namespace Learning.MessageQueue.Repository
         {
             var retryDataHashName = GetRetryDataHashKey(@event);
             var hashData = await _redisClient.HashGetAllAsync(retryDataHashName).ConfigureAwait(false);
-            var lastRetryTime = hashData.First(x => x.Name == LastRetryTimeFieldName).Value;
-            var retryCount = hashData.First(x => x.Name == RetryCountFieldName).Value;
+            var lastRetryTime = hashData?.FirstOrDefault(x => x.Name == LastRetryTimeFieldName).Value;
+            var retryCount = hashData?.FirstOrDefault(x => x.Name == RetryCountFieldName).Value;
 
             var data = new RetryData
             {
@@ -96,7 +95,7 @@ namespace Learning.MessageQueue.Repository
         {
             var eventType = @event.GetType().Name;
             var eventKey = $"{_environment}:{eventType}";
-            var retryDataHashName = $"RetryData:{eventKey}:{@event.Id}";
+            var retryDataHashName = $"RetryData:{{{eventKey}}}:{@event.Id}";
 
             return retryDataHashName;
         }
