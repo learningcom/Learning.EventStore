@@ -72,9 +72,9 @@ namespace Learning.EventStore.Test.RedisMessageQueue
 
             await _messageQueue.PublishAsync(_event);
 
-            A.CallTo(() => _trans.ListRightPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+            A.CallTo(() => _trans.ListLeftPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                 .MustHaveHappened();
-            A.CallTo(() => _trans.ListRightPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+            A.CallTo(() => _trans.ListLeftPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                 .MustHaveHappened();
         }
 
@@ -101,9 +101,9 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             catch (MessagePublishFailedException)
             {
                 A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
-                A.CallTo(() => _trans.ListRightPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+                A.CallTo(() => _trans.ListLeftPushAsync("Subscriber1:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                     .MustHaveHappened(Repeated.Exactly.Times(10));
-                A.CallTo(() => _trans.ListRightPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
+                A.CallTo(() => _trans.ListLeftPushAsync("Subscriber2:{test:TestEvent}:PublishedEvents", _serializedEvent, When.Always, CommandFlags.None))
                     .MustHaveHappened(Repeated.Exactly.Times(10));
                 A.CallTo(() => _trans.PublishAsync("test:TestEvent", true, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
             }

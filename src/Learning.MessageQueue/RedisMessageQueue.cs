@@ -82,9 +82,7 @@ namespace Learning.MessageQueue
             foreach (var subscriber in subscribers)
             {
                 var listKey = $"{subscriber}:{{{eventKey}}}:PublishedEvents";
-
-                //Write the commitId to a list mapping commitIds to individual events for a particular aggregate (@event.Id)
-                tran.ListRightPushAsync(listKey, serializedEvent).ConfigureAwait(false);
+                tran.ListLeftPushAsync(listKey, serializedEvent).ConfigureAwait(false);
             }
 
             /*
