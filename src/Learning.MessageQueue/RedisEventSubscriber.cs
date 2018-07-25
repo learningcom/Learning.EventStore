@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Xml;
 using Learning.EventStore.Common;
 using Learning.EventStore.Common.Redis;
 #if !NET46 && !NET452
@@ -58,26 +59,28 @@ namespace Learning.MessageQueue
                     var eventData = _redis.ListRightPopLeftPush(publishedListKey, processingListKey);
 
                     // if the eventData is null, then the event has already been processed by another instance, skip further execution
-                    if (eventData.HasValue)
+                    if (!eventData.HasValue)
                     {
-                        try
-                        {
-                            //Deserialize the event data and invoke the handler
-                            var message = JsonConvert.DeserializeObject<T>(eventData);
-                            callBack.Invoke(message);
-                        }
-                        catch (Exception)
-                        {
-                            var deadLetterListKey = $"{_keyPrefix}:{{{eventKey}}}:DeadLetters";
-                            _redis.ListLeftPush(deadLetterListKey, eventData);
+                        return;
+                    }
 
-                            throw;
-                        }
-                        finally
-                        {
-                            //Remove the event from the 'processing' list.
-                            _redis.ListRemove(processingListKey, eventData);
-                        }
+                    try
+                    {
+                        //Deserialize the event data and invoke the handler
+                        var message = JsonConvert.DeserializeObject<T>(eventData);
+                        callBack.Invoke(message);
+                    }
+                    catch (Exception)
+                    {
+                        var deadLetterListKey = $"{_keyPrefix}:{{{eventKey}}}:DeadLetters";
+                        _redis.ListLeftPush(deadLetterListKey, eventData);
+
+                        throw;
+                    }
+                    finally
+                    {
+                        //Remove the event from the 'processing' list.
+                        _redis.ListRemove(processingListKey, eventData);
                     }
                 }
                 catch (Exception e)
@@ -91,6 +94,14 @@ namespace Learning.MessageQueue
 
             //Subscribe to the event
             await _redis.SubscribeAsync(eventKey, RedisCallback).ConfigureAwait(false);
+
+            //Grab any unprocessed events and process them
+            //Ensures that events that were fired before the application was started will be picked up
+            var awaitingEvents = await _redis.ListLengthAsync(publishedListKey).ConfigureAwait(false);
+            for (var i = 0; i < awaitingEvents; i++)
+            {
+                RedisCallback(eventKey, true);
+            }
         }
     }
 }

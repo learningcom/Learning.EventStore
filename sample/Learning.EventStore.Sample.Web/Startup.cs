@@ -145,15 +145,17 @@ namespace Learning.EventStore.Sample.Web
             var loggerFactory = serviceLocator.GetService<ILoggerFactory>();
             var logger = loggerFactory.CreateLogger("Learning.EventStore.Sample.Web");
 
-            var subscribers = _allTypes.Where(x => x.Item1 != null && x.Item1.GetInterfaces().Contains(typeof(ISubscription)))
+            var subscribers = _allTypes.Where(x => x.Item1 != null && x.Item1.GetInterfaces().Contains(typeof(ISubscription)) && !x.Item1.IsAbstract)
                 .Select(x => Activator.CreateInstance(x.Item1, subscriber, logger) as ISubscription)
                 .ToList();
 
+            var subscriptionTaskList = new List<Task>();
             foreach (var handler in subscribers)
             {
-                handler.SubscribeAsync();
+                subscriptionTaskList.Add(Task.Run(async () => { await handler.SubscribeAsync(); }));
             }
 
+            Task.WaitAll(subscriptionTaskList.ToArray());
         }
     }
 }
