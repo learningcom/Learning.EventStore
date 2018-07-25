@@ -13,6 +13,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
     {
         private readonly IRedisClient _redis;
         private TestEvent _callbackData;
+        private int _callBackExecutedCount = 0;
         private readonly string _serializedEvent;
 
         public SubscribeTest()
@@ -35,6 +36,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             Action<TestEvent> cb = (data) =>
             {
                 _callbackData = data;
+                _callBackExecutedCount++;
             };
 
             subscriber.SubscribeAsync(cb).Wait();
@@ -43,7 +45,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         [TestMethod]
         public void RegistersAsSubscriber()
         {
-            A.CallTo(() => _redis.SetAddAsync("Subscribers:{Test:TestEvent}", "TestPrefix")).MustHaveHappened();
+            A.CallTo(() => _redis.SetAddAsync("Subscribers:{Test:TestEvent}", "TestPrefix")).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [TestMethod]
@@ -56,7 +58,15 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
         public void RemovesFromProcessingListUponCompletion()
         {
             A.CallTo(() => _redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", _serializedEvent))
-                .MustHaveHappened();
+                .MustHaveHappened(Repeated.Exactly.Times(3));
+        }
+
+        [TestMethod]
+        public void ProcessesExistingItemsInPublishedQueue()
+        {
+            Assert.AreEqual(3, _callBackExecutedCount);
+            A.CallTo(() => _redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents"))
+                .MustHaveHappened(Repeated.Exactly.Times(3));
         }
     }
 }
