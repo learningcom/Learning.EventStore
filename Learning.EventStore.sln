@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Learning.Cqrs.Test", "test\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{E7BBE83F-A968-4419-B5D5-176FA41EACD0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning.EventStore.Sample.Web", "sample\Learning.EventStore.Sample.Web\Learning.EventStore.Sample.Web.csproj", "{435EDD18-EBD3-47B3-ACF7-0361E70A1240}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Learning.EventStore.Sample.Web", "sample\Learning.EventStore.Sample.Web\Learning.EventStore.Sample.Web.csproj", "{435EDD18-EBD3-47B3-ACF7-0361E70A1240}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
