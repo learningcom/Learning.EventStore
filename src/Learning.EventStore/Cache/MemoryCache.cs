@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Learning.EventStore.Domain;
-using Microsoft.Extensions.Caching.Memory;
-#if NET451
+#if NET452
 using System.Runtime.Caching;
 #else
-
+using Microsoft.Extensions.Caching.Memory;
 #endif
 
 namespace Learning.EventStore.Cache
@@ -12,7 +12,7 @@ namespace Learning.EventStore.Cache
     public class MemoryCache : ICache
     {
 
-#if NET451
+#if NET452
         private readonly System.Runtime.Caching.MemoryCache _cache;
         private Func<CacheItemPolicy> _policyFactory;
 #else
@@ -26,7 +26,7 @@ namespace Learning.EventStore.Cache
 
         public MemoryCache(int expiry)
         {
-#if NET451
+#if NET452
             _cache = System.Runtime.Caching.MemoryCache.Default;
             _policyFactory = () => new CacheItemPolicy();
 #else
@@ -39,41 +39,43 @@ namespace Learning.EventStore.Cache
 
         }
 
-        public bool IsTracked(string id)
+        public Task<bool> IsTracked(string id)
         {
             object o;
-#if NET451
-            return _cache.Contains(id);
+#if NET452
+            return Task.FromResult(_cache.Contains(id));
 #else
-            return _cache.TryGetValue(id, out o);
+            return Task.FromResult(_cache.TryGetValue(id, out o));
 #endif
         }
 
-        public void Set(string id, AggregateRoot aggregate)
+        public Task Set(string id, AggregateRoot aggregate)
         {
-#if NET451
+#if NET452
             _cache.Add(id, aggregate, _policyFactory.Invoke());
 #else
             _cache.Set(id, aggregate, _cacheOptions);
 #endif
+            return Task.FromResult(0);
         }
 
-        public AggregateRoot Get(string id)
+        public Task<AggregateRoot> Get(string id)
         {
-#if NET451
-            return (AggregateRoot)_cache.Get(id);
+#if NET452
+            return Task.FromResult((AggregateRoot)_cache.Get(id));
 #else
-            return (AggregateRoot) _cache.Get(id);
+            return Task.FromResult((AggregateRoot)_cache.Get(id));
 #endif
         }
 
-        public void Remove(string id)
+        public Task Remove(string id)
         {
 #if NET451
             _cache.Remove(id);
 #else
             _cache.Remove(id);
 #endif
+            return Task.FromResult(0);
         }
     }
 }

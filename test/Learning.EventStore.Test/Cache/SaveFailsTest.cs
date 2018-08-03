@@ -33,7 +33,7 @@ namespace Learning.EventStore.Test.Cache
             }
             catch (Exception) { }
 
-            var aggregate = _memoryCache.Get(_aggregate.Id);
+            var aggregate = await _memoryCache.Get(_aggregate.Id);
             Assert.IsNull(aggregate);
         }
     }

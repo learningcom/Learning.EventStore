@@ -40,15 +40,15 @@ namespace Learning.EventStore.Cache
             {
                 await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
-                if (!string.IsNullOrEmpty(aggregate.Id) && !_cache.IsTracked(aggregate.Id))
+                if (!string.IsNullOrEmpty(aggregate.Id) && !await _cache.IsTracked(aggregate.Id).ConfigureAwait(false))
                 {
-                    _cache.Set(aggregate.Id, aggregate);
+                    await _cache.Set(aggregate.Id, aggregate).ConfigureAwait(false);
                 }
                 await _repository.SaveAsync(aggregate, expectedVersion).ConfigureAwait(false);
             }
             catch (Exception)
             {
-                _cache.Remove(aggregate.Id);
+                await _cache.Remove(aggregate.Id).ConfigureAwait(false);
                 throw;
             }
             finally
@@ -64,15 +64,16 @@ namespace Learning.EventStore.Cache
                 await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
                 T aggregate;
-                if (_cache.IsTracked(aggregateId))
+                if (await _cache.IsTracked(aggregateId).ConfigureAwait(false))
                 {
-                    aggregate = (T)_cache.Get(aggregateId);
+                    var cachedAggregate = await _cache.Get(aggregateId).ConfigureAwait(false);
+                    aggregate = (T)cachedAggregate;
                     var aggregateType = typeof(T).Name;
                     var events = await _eventStore.GetAsync(aggregateId, aggregateType, aggregate.Version).ConfigureAwait(false);
 
                     if (events.Any() && events.First().Version != aggregate.Version + 1)
                     {
-                        _cache.Remove(aggregateId);
+                        await _cache.Remove(aggregateId).ConfigureAwait(false);
                     }
                     else
                     {
@@ -82,12 +83,12 @@ namespace Learning.EventStore.Cache
                 }
 
                 aggregate = await _repository.GetAsync<T>(aggregateId).ConfigureAwait(false);
-                _cache.Set(aggregateId, aggregate);
+                await _cache.Set(aggregateId, aggregate).ConfigureAwait(false);
                 return aggregate;
             }
             catch (Exception)
             {
-                _cache.Remove(aggregateId);
+                await _cache.Remove(aggregateId).ConfigureAwait(false);
                 throw;
             }
             finally

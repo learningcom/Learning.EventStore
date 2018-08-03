@@ -1,12 +1,13 @@
-﻿using Learning.EventStore.Domain;
+﻿using System.Threading.Tasks;
+using Learning.EventStore.Domain;
 
 namespace Learning.EventStore.Cache
 {
     public interface ICache
     {
-        bool IsTracked(string id);
-        void Set(string id, AggregateRoot aggregate);
-        AggregateRoot Get(string id);
-        void Remove(string id);
+        Task<bool> IsTracked(string id);
+        Task Set(string id, AggregateRoot aggregate);
+        Task<AggregateRoot> Get(string id);
+        Task Remove(string id);
     }
 }

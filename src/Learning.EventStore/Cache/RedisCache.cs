@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Learning.EventStore.Common;
 using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain;
@@ -30,42 +31,42 @@ namespace Learning.EventStore.Cache
             _environment = environment;
         }
 
-        public bool IsTracked(string id)
+        public async Task<bool> IsTracked(string id)
         {
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            var inMemoryCache = _memoryCache.IsTracked(cacheKey);
-            var inRedisCache = _redis.KeyExistsAsync(cacheKey).Result;
+            var inMemoryCache = await _memoryCache.IsTracked(cacheKey).ConfigureAwait(false);
+            var inRedisCache = await _redis.KeyExistsAsync(cacheKey).ConfigureAwait(false);
             return inMemoryCache || inRedisCache;
         }
 
-        public void Set(string id, AggregateRoot aggregate)
+        public async Task Set(string id, AggregateRoot aggregate)
         {
             if (aggregate != null)
             {
                 var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
                 var serializedAggregateRoot = JsonConvert.SerializeObject(aggregate, JsonSerializerSettings);
-                _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry)).Wait();
-                _memoryCache.Set(cacheKey, aggregate);
+                await _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry));
+                await _memoryCache.Set(cacheKey, aggregate).ConfigureAwait(false);
             }
         }
 
-        public AggregateRoot Get(string id)
+        public async Task<AggregateRoot> Get(string id)
         {
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            var memoryCacheValue = _memoryCache.Get(cacheKey);
+            var memoryCacheValue = await _memoryCache.Get(cacheKey).ConfigureAwait(false);
             if (memoryCacheValue != null)
             {
                 return memoryCacheValue;
             }
 
-            var serializedAggregateRoot = _redis.StringGetAsync(cacheKey).Result;
+            var serializedAggregateRoot = await _redis.StringGetAsync(cacheKey).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(serializedAggregateRoot))
             {
-                _redis.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(_expiry)).Wait();
+                await _redis.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(_expiry)).ConfigureAwait(false);
 
                 var deserializedAggregateRoot = JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
 
-                _memoryCache.Set(cacheKey, deserializedAggregateRoot);
+                await _memoryCache.Set(cacheKey, deserializedAggregateRoot).ConfigureAwait(false);
 
                 return deserializedAggregateRoot;
             }
@@ -73,11 +74,11 @@ namespace Learning.EventStore.Cache
             return null;
         }
 
-        public void Remove(string id)
+        public async Task Remove(string id)
         {
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            _memoryCache.Remove(cacheKey);
-            _redis.KeyDeleteAsync(cacheKey).Wait();
+            await _memoryCache.Remove(cacheKey).ConfigureAwait(false);
+            await _redis.KeyDeleteAsync(cacheKey).ConfigureAwait(false);
         }
     }
 }

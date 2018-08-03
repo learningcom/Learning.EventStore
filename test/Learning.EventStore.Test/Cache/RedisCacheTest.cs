@@ -13,7 +13,7 @@ namespace Learning.EventStore.Test.Cache
     public class RedisCacheTest
     {
         [TestMethod]
-        public void IsTrackedReturnTrueIfMemoryCacheIsTrackedIsTrue()
+        public async Task IsTrackedReturnTrueIfMemoryCacheIsTrackedIsTrue()
         {
             var memoryCache = A.Fake<ICache>();
             A.CallTo(() => memoryCache.IsTracked("prefix:test:12345")).Returns(true);
@@ -21,13 +21,13 @@ namespace Learning.EventStore.Test.Cache
             A.CallTo(() => redisClient.KeyExistsAsync("prefix:test:12345")).Returns(Task.FromResult(false));
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.IsTracked("12345");
+            var result = await redisCache.IsTracked("12345");
 
             Assert.IsTrue(result);
         }
 
         [TestMethod]
-        public void IsTrackedReturnTrueIfKeyIsInRedisCache()
+        public async Task IsTrackedReturnTrueIfKeyIsInRedisCache()
         {
             var memoryCache = A.Fake<ICache>();
             A.CallTo(() => memoryCache.IsTracked("prefix:test:12345")).Returns(false);
@@ -35,13 +35,13 @@ namespace Learning.EventStore.Test.Cache
             A.CallTo(() => redisClient.KeyExistsAsync("prefix:test:12345")).Returns(Task.FromResult(true));
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.IsTracked("12345");
+            var result = await redisCache.IsTracked("12345");
 
             Assert.IsTrue(result);
         }
 
         [TestMethod]
-        public void IsTrackedReturnFalseIfKeyIsNotInRedisCacheOrMemoryCache()
+        public async Task IsTrackedReturnFalseIfKeyIsNotInRedisCacheOrMemoryCache()
         {
             var memoryCache = A.Fake<ICache>();
             A.CallTo(() => memoryCache.IsTracked("prefix:test:12345")).Returns(false);
@@ -49,27 +49,27 @@ namespace Learning.EventStore.Test.Cache
             A.CallTo(() => redisClient.KeyExistsAsync("prefix:test:12345")).Returns(Task.FromResult(false));
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.IsTracked("12345");
+            var result = await redisCache.IsTracked("12345");
 
             Assert.IsFalse(result);
         }
 
         [TestMethod]
-        public void SetAddsEntryToMemoryCacheAndRedisCache()
+        public async Task SetAddsEntryToMemoryCacheAndRedisCache()
         {
             var memoryCache = A.Fake<ICache>();
             var redisClient = A.Fake<IRedisClient>();
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
             var aggregate = new TestAggregate();
 
-            redisCache.Set("12345", aggregate);
+            await redisCache.Set("12345", aggregate);
 
             A.CallTo(() => redisClient.StringSetAsync("prefix:test:12345", A<string>._, A<TimeSpan>._)).MustHaveHappened();
             A.CallTo(() => memoryCache.Set("prefix:test:12345", aggregate)).MustHaveHappened();
         }
 
         [TestMethod]
-        public void GetReturnsValueFromMemoryCacheIfPresent()
+        public async Task GetReturnsValueFromMemoryCacheIfPresent()
         {
             var aggregate = new TestAggregate();
             var memoryCache = A.Fake<ICache>();
@@ -77,7 +77,7 @@ namespace Learning.EventStore.Test.Cache
             var redisClient = A.Fake<IRedisClient>();
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.Get("12345");
+            var result = await redisCache.Get("12345");
 
             Assert.IsTrue(result.GetType() == typeof(TestAggregate));
             A.CallTo(() => redisClient.StringGetAsync("prefix:test:12345")).MustNotHaveHappened();
@@ -86,18 +86,18 @@ namespace Learning.EventStore.Test.Cache
         }
 
         [TestMethod]
-        public void GetReturnsValueFromRedisCacheIfNotPresentInMemoryCache()
+        public async Task GetReturnsValueFromRedisCacheIfNotPresentInMemoryCache()
         {
             var aggregate = new TestAggregate();
             var memoryCache = A.Fake<ICache>();
-            A.CallTo(() => memoryCache.Get("prefix:test:12345")).Returns(null);
+            A.CallTo(() => memoryCache.Get("prefix:test:12345")).Returns((AggregateRoot)null);
             var redisClient = A.Fake<IRedisClient>();
             var serializedAggregate = JsonConvert.SerializeObject(aggregate,
                 new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All});
             A.CallTo(() => redisClient.StringGetAsync("prefix:test:12345")).Returns(serializedAggregate);
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.Get("12345");
+            var result = await redisCache.Get("12345");
 
             Assert.IsTrue(result.GetType() == typeof(TestAggregate));
             A.CallTo(() => redisClient.KeyExpireAsync("prefix:test:12345", A<TimeSpan>._)).MustHaveHappened();
@@ -105,27 +105,27 @@ namespace Learning.EventStore.Test.Cache
         }
 
         [TestMethod]
-        public void ReturnsNullWhenAllCachesEmpty()
+        public async Task ReturnsNullWhenAllCachesEmpty()
         {
             var memoryCache = A.Fake<ICache>();
-            A.CallTo(() => memoryCache.Get("prefix:test:12345")).Returns(null);
+            A.CallTo(() => memoryCache.Get("prefix:test:12345")).Returns((AggregateRoot)null);
             var redisClient = A.Fake<IRedisClient>();
             A.CallTo(() => redisClient.StringGetAsync("prefix:test:12345")).Returns("");
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            var result = redisCache.Get("12345");
+            var result = await redisCache.Get("12345");
 
             Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void RemoveDeletesItemFromMemoryCacheAndRedisCache()
+        public async Task RemoveDeletesItemFromMemoryCacheAndRedisCache()
         {
             var memoryCache = A.Fake<ICache>();
             var redisClient = A.Fake<IRedisClient>();
             var redisCache = new RedisCache(memoryCache, redisClient, "test", "prefix");
 
-            redisCache.Remove("12345");
+           await redisCache.Remove("12345");
 
             A.CallTo(() => redisClient.KeyDeleteAsync("prefix:test:12345")).MustHaveHappened();
             A.CallTo(() => memoryCache.Remove("prefix:test:12345")).MustHaveHappened();
