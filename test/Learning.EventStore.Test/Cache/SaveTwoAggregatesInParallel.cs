@@ -12,7 +12,6 @@ namespace Learning.EventStore.Test.Cache
     public class SaveTwoAggregatesInParallel
     {
         private readonly CacheRepository _rep1;
-        private TestAggregate _aggregate1;
         private readonly TestInMemoryEventStore _testStore;
         private readonly TestAggregate _aggregate2;
 
@@ -21,17 +20,17 @@ namespace Learning.EventStore.Test.Cache
             _testStore = new TestInMemoryEventStore();
             _rep1 = new CacheRepository(new Repository(_testStore), _testStore, new MemoryCache());
 
-            _aggregate1 = new TestAggregate(Guid.NewGuid().ToString());
+            var aggregate1 = new TestAggregate(Guid.NewGuid().ToString());
             _aggregate2 = new TestAggregate(Guid.NewGuid().ToString());
 
-            _rep1.SaveAsync(_aggregate1).Wait();
+            _rep1.SaveAsync(aggregate1).Wait();
             _rep1.SaveAsync(_aggregate2).Wait();
 
             var t1 = new Task(() =>
             {
                 for (var i = 0; i < 100; i++)
                 {
-                    var aggregate = _rep1.GetAsync<TestAggregate>(_aggregate1.Id).Result;
+                    var aggregate = _rep1.GetAsync<TestAggregate>(aggregate1.Id).Result;
                     aggregate.DoSomething();
                     _rep1.SaveAsync(aggregate).Wait();
                 }

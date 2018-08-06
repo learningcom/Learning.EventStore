@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,12 +28,18 @@ namespace Learning.EventStore.Test.Cache
         }
 
         [TestMethod]
-        public void ReleasesSemaphoreAfterGetIsComplete()
+        public void GetsAggregate()
         {
-            var property = _cacheRepository.GetType().GetField("SemaphoreSlim", BindingFlags.Static | BindingFlags.NonPublic);
-            var semaphore = (SemaphoreSlim)property.GetValue(_cacheRepository);
+            Assert.IsNotNull(_aggregate);
+        }
 
-            Assert.AreEqual(1, semaphore.CurrentCount);
+        [TestMethod]
+        public void ReleasesLockAfterGetIsComplete()
+        {
+            var property = _cacheRepository.GetType().GetField("Locks", BindingFlags.Static | BindingFlags.NonPublic);
+            var locks = (ConcurrentDictionary<string, SemaphoreSlim>)property.GetValue(_cacheRepository);
+
+            Assert.AreEqual(1, locks.FirstOrDefault().Value.CurrentCount);
         }
 
         [TestMethod]

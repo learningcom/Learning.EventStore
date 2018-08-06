@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,34 +13,24 @@ namespace Learning.EventStore.Cache
         private readonly IRepository _repository;
         private readonly IEventStore _eventStore;
         private readonly ICache _cache;
-        private static readonly SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1); 
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private static SemaphoreSlim CreateLock(string _) => new SemaphoreSlim(1, 1); 
 
         public CacheRepository(IRepository repository, IEventStore eventStore, ICache cache)
         {
-            if (repository == null)
-            {
-                throw new ArgumentNullException(nameof(repository));
-            }
-            if (eventStore == null)
-            {
-                throw new ArgumentNullException(nameof(eventStore));
-            }
-            if (cache == null)
-            {
-                throw new ArgumentNullException(nameof(cache));
-            }
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
 
-            _repository = repository;
-            _eventStore = eventStore;
-            _cache = cache;
+            _cache.RegisterEvictionCallback(key => Locks.TryRemove(key, out var _));
         }
 
         public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
         {
+            var @lock = Locks.GetOrAdd(aggregate.Id, CreateLock);
+            await @lock.WaitAsync().ConfigureAwait(false);
             try
             {
-                await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
-
                 if (!string.IsNullOrEmpty(aggregate.Id) && !await _cache.IsTracked(aggregate.Id).ConfigureAwait(false))
                 {
                     await _cache.Set(aggregate.Id, aggregate).ConfigureAwait(false);
@@ -53,16 +44,16 @@ namespace Learning.EventStore.Cache
             }
             finally
             {
-                SemaphoreSlim.Release();
+                @lock.Release();
             }
         }
 
         public async Task<T> GetAsync<T>(string aggregateId) where T : AggregateRoot
         {
+            var @lock = Locks.GetOrAdd(aggregateId, CreateLock);
+            await @lock.WaitAsync().ConfigureAwait(false);
             try
             {
-                await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
-
                 T aggregate;
                 if (await _cache.IsTracked(aggregateId).ConfigureAwait(false))
                 {
@@ -93,7 +84,7 @@ namespace Learning.EventStore.Cache
             }
             finally
             {
-                SemaphoreSlim.Release();
+                @lock.Release();
             }
         }
     }

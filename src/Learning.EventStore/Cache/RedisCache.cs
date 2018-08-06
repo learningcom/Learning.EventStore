@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Learning.EventStore.Common;
 using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain;
 using Newtonsoft.Json;
@@ -15,7 +14,8 @@ namespace Learning.EventStore.Cache
         private readonly string _keyPrefix;
         private readonly string _environment;
 
-        private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+        private static readonly JsonSerializerSettings JsonSerializerSettings =
+            new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
 
         public RedisCache(ICache memoryCache, IRedisClient redis, string environment, string keyPrefix)
             : this(memoryCache, redis, environment, keyPrefix, 30)
@@ -64,7 +64,8 @@ namespace Learning.EventStore.Cache
             {
                 await _redis.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(_expiry)).ConfigureAwait(false);
 
-                var deserializedAggregateRoot = JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
+                var deserializedAggregateRoot =
+                    JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
 
                 await _memoryCache.Set(cacheKey, deserializedAggregateRoot).ConfigureAwait(false);
 
@@ -79,6 +80,10 @@ namespace Learning.EventStore.Cache
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
             await _memoryCache.Remove(cacheKey).ConfigureAwait(false);
             await _redis.KeyDeleteAsync(cacheKey).ConfigureAwait(false);
+        }
+
+        public void RegisterEvictionCallback(Action<string> action)
+        {
         }
     }
 }

@@ -41,11 +41,10 @@ namespace Learning.EventStore.Cache
 
         public Task<bool> IsTracked(string id)
         {
-            object o;
 #if NET452
             return Task.FromResult(_cache.Contains(id));
 #else
-            return Task.FromResult(_cache.TryGetValue(id, out o));
+            return Task.FromResult(_cache.TryGetValue(id, out var o));
 #endif
         }
 
@@ -76,6 +75,25 @@ namespace Learning.EventStore.Cache
             _cache.Remove(id);
 #endif
             return Task.FromResult(0);
+        }
+
+        public void RegisterEvictionCallback(Action<string> action)
+        {
+#if NET452
+            _policyFactory = () => new CacheItemPolicy
+            {
+                SlidingExpiration = TimeSpan.FromMinutes(15),
+                RemovedCallback = x =>
+                {
+                    action.Invoke(x.CacheItem.Key);
+                }
+            };
+#else
+            _cacheOptions.RegisterPostEvictionCallback((key, value, reason, state) =>
+            {
+                action.Invoke((string)key);
+            });
+#endif
         }
     }
 }
