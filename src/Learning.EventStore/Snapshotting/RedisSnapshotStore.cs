@@ -43,7 +43,7 @@ namespace Learning.EventStore.Snapshotting
         {
             Snapshot snapshot = null;
             var partition = id.CalculatePartition();
-            var serializedSnapshot = await _redis.HashGetAsync($"{_hashKeyBase}:{partition}", id);
+            var serializedSnapshot = await _redis.HashGetAsync($"{_hashKeyBase}:{partition}", id).ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(serializedSnapshot))
             {

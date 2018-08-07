@@ -7,28 +7,27 @@ namespace Learning.EventStore.Test.Mocks
 {
     public class TestInMemoryEventStore : IEventStore
     {
-        public readonly IList<IEvent> Events = new List<IEvent>(); 
+        public readonly List<IEvent> Events = new List<IEvent>(); 
 
-        public async Task SaveAsync(IEnumerable<IEvent> events)
+        public Task SaveAsync(IEnumerable<IEvent> events)
         {
-            await Task.Run(() =>
+            lock (Events)
             {
-                foreach (var @event in events)
-                {
-                    Events.Add(@event);   
-                }
-            });
+                Events.AddRange(events);
+            }
+
+            return Task.CompletedTask;
         }
 
-        public async Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
+        public Task<IEnumerable<IEvent>> GetAsync(string aggregateId, string aggregateType, int fromVersion)
         {
-            return await Task.Run<IEnumerable<IEvent>>(() =>
+            lock (Events)
             {
-                return
-                    Events.Where(x => x.Version > fromVersion && x.Id == aggregateId)
-                        .OrderBy(x => x.Version)
-                        .ToList();
-            });
+                return Task.FromResult((IEnumerable<IEvent>)Events
+                    .Where(x => x.Version > fromVersion && x.Id == aggregateId)
+                    .OrderBy(x => x.Version)
+                    .ToList());
+            }
         }
     }
 }
