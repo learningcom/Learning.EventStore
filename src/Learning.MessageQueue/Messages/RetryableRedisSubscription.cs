@@ -105,7 +105,7 @@ namespace Learning.MessageQueue.Messages
             var retryData = await _messageQueueRepository.GetRetryData(@event).ConfigureAwait(false);
 
             // exponential backoff
-            var mpow = (int)Math.Pow(2, retryData.RetryCount);
+            var mpow = Math.Pow(2, retryData.RetryCount);
             var interval = Math.Min(mpow * RetryIntervalMinutes, RetryIntervalMaxMinutes);
             var intervalPassed = DateTimeOffset.UtcNow > retryData.LastRetryTime?.ToUniversalTime().AddMinutes(interval);
 

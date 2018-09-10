@@ -128,6 +128,28 @@ namespace Learning.EventStore.Test.RedisMessageQueue
 
             Assert.IsFalse(retryClass.CallBack1Called);
         }
+
+        [TestMethod]
+        public async Task DoesNotFailWithLargeNumberOfRetries()
+        {
+            var logger = A.Fake<ILogger>();
+            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
+            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
+            var message = new TestMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-1) };
+            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            var retryData = new RetryData
+            {
+                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
+                RetryCount = 4000
+            };
+            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
+            var subscriber = A.Fake<IEventSubscriber>();
+            var retryClass = new TestRetryHoursSubscription(subscriber, logger, eventStoreRepository);
+
+            await retryClass.RetryAsync().ConfigureAwait(false);
+
+            Assert.IsTrue(retryClass.CallBack1Called);
+        }
     }
 
     public class TestRetryClass : RetryableRedisSubscription<TestMessage>
