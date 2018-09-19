@@ -100,7 +100,16 @@ namespace Learning.MessageQueue
             var awaitingEvents = await _redis.ListLengthAsync(publishedListKey).ConfigureAwait(false);
             for (var i = 0; i < awaitingEvents; i++)
             {
-                RedisCallback(eventKey, true);
+                try
+                {
+                    await Task.Run(() => RedisCallback(eventKey, true)).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+#if !NET46 && !NET452
+                    _logger.LogError(e, e.Message);
+#endif
+                }
             }
         }
     }
