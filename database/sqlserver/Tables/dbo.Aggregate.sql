@@ -1,7 +1,7 @@
 CREATE TABLE [dbo].[Aggregate]
 (
 [AggregateKey] [bigint] NOT NULL IDENTITY(1, 1),
-[AggregateId] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+[AggregateId] [varchar] (max) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 [AggregateType] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 [ApplicationName] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 [auditCreateDate] [datetime2] (4) NOT NULL CONSTRAINT [defAggregate_auditCreateDate] DEFAULT (sysdatetime()),
