@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain;
@@ -45,8 +46,13 @@ namespace Learning.EventStore.Cache
             {
                 var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
                 var serializedAggregateRoot = JsonConvert.SerializeObject(aggregate, JsonSerializerSettings);
-                await _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry));
-                await _memoryCache.Set(cacheKey, aggregate).ConfigureAwait(false);
+                var tasks = new List<Task> 
+                {
+                    _redis.StringSetAsync(cacheKey, serializedAggregateRoot, TimeSpan.FromMinutes(_expiry)),
+                    _memoryCache.Set(cacheKey, aggregate)
+                };
+
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
         }
 
@@ -62,12 +68,16 @@ namespace Learning.EventStore.Cache
             var serializedAggregateRoot = await _redis.StringGetAsync(cacheKey).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(serializedAggregateRoot))
             {
-                await _redis.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(_expiry)).ConfigureAwait(false);
-
                 var deserializedAggregateRoot =
                     JsonConvert.DeserializeObject(serializedAggregateRoot, JsonSerializerSettings) as AggregateRoot;
 
-                await _memoryCache.Set(cacheKey, deserializedAggregateRoot).ConfigureAwait(false);
+                var tasks = new List<Task> 
+                {
+                    _redis.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(_expiry)),
+                    _memoryCache.Set(cacheKey, deserializedAggregateRoot)
+                };
+
+                await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 return deserializedAggregateRoot;
             }
@@ -78,8 +88,13 @@ namespace Learning.EventStore.Cache
         public async Task Remove(string id)
         {
             var cacheKey = $"{_keyPrefix}:{_environment}:{id}";
-            await _memoryCache.Remove(cacheKey).ConfigureAwait(false);
-            await _redis.KeyDeleteAsync(cacheKey).ConfigureAwait(false);
+            var tasks = new List<Task>
+            {
+                _memoryCache.Remove(cacheKey),
+                _redis.KeyDeleteAsync(cacheKey)
+            };
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         public void RegisterEvictionCallback(Action<string> action)
