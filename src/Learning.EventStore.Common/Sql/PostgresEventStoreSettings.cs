@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace Learning.EventStore.Common.Sql
 {
-    public class PostgresEventStoreSettings : ISqlEventStoreSettings
+    public class PostgresEventStoreSettings : EventStoreSettings, ISqlEventStoreSettings
     {
         public PostgresEventStoreSettings(NpgsqlConnectionStringBuilder connectionStringBuilder, string applicationName)
             : this(connectionStringBuilder.ConnectionString, connectionStringBuilder.ConnectionString, applicationName)
@@ -16,12 +16,6 @@ namespace Learning.EventStore.Common.Sql
             ReadConnectionString = readConnectionString;
             ApplicationName = applicationName;
         }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// The name of the application using the event store
-        /// </summary>
-        public string ApplicationName { get; }
 
         /// <summary>
         /// The connection string for writing to SQL

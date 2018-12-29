@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace Learning.EventStore.Common.Sql
 {
-    public class SqlServerEventStoreSettings : ISqlEventStoreSettings
+    public class SqlServerEventStoreSettings : EventStoreSettings, ISqlEventStoreSettings
     {
         public SqlServerEventStoreSettings(SqlConnectionStringBuilder connectionStringBuilder, string applicationName)
         {
@@ -12,11 +12,6 @@ namespace Learning.EventStore.Common.Sql
             ReadConnectionString = connectionStringBuilder.ConnectionString;
             ApplicationName = applicationName;
         }
-
-        /// <summary>
-        /// The name of the application using the event store
-        /// </summary>
-        public string ApplicationName { get; }
 
         /// <summary>
         /// The connection string for writing to SQL

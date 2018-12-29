@@ -10,25 +10,25 @@ namespace Learning.EventStore.Snapshotting
     public class RedisSnapshotStore : ISnapshotStore
     {
         private readonly IRedisClient _redis;
-        private readonly EventStoreSettings _settings;
+        private readonly SnapshotStoreSettings _settings;
         private readonly string _hashKeyBase;
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
-        public RedisSnapshotStore(IRedisClient redis, string keyPrefix)
-            : this(redis, new EventStoreSettings { KeyPrefix = keyPrefix })
+        public RedisSnapshotStore(IRedisClient redis, string applicationName)
+            : this(redis, new SnapshotStoreSettings { ApplicationName = applicationName })
         {
         }
 
-        public RedisSnapshotStore(IRedisClient redis, EventStoreSettings settings)
+        public RedisSnapshotStore(IRedisClient redis, SnapshotStoreSettings settings)
         {
-            if (string.IsNullOrWhiteSpace(settings.KeyPrefix))
+            if (string.IsNullOrWhiteSpace(settings.ApplicationName))
             {
-                throw new ArgumentException("KeyPrefix must be specified in EventStoreSettings");
+                throw new ArgumentException("ApplicationName must be specified in EventStoreSettings");
             }
 
             _redis = redis;
             _settings = settings;
-            _hashKeyBase = $"Snapshots:{_settings.KeyPrefix}";
+            _hashKeyBase = $"Snapshots:{_settings.ApplicationName}";
         }
 
         public async Task<bool> ExistsAsync(string id)

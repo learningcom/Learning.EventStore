@@ -19,7 +19,8 @@ namespace Learning.EventStore.Test.Snapshotting
             _snapshotStore = new TestSnapshotStore();
             var snapshotStrategy = new DefaultSnapshotStrategy(_snapshotStore);
             var repository = new SnapshotRepository(_snapshotStore, snapshotStrategy, new Repository(_eventStore), _eventStore);
-            var session = new Session(repository);
+            var eventStoreSettings = new TestEventStoreSettings { SessionLockEnabled = false };
+            var session = new Session(repository, eventStoreSettings, null);
             var aggregate = new TestAggregate(Guid.NewGuid().ToString());
 
             for (var i = 0; i < 200; i++)

@@ -20,7 +20,8 @@ namespace Learning.EventStore.Test.Domain
         {
             _eventStore = new TestInMemoryEventStore();
             _rep = new Repository(_eventStore);
-            _session = new Session(_rep);
+            var eventStoreSettings = new TestEventStoreSettings { SessionLockEnabled = false };
+            _session = new Session(_rep, eventStoreSettings, null);
 
             _aggregate = new TestAggregateNoParameterLessConstructor(2);
         }

@@ -15,7 +15,8 @@ namespace Learning.EventStore.Test.Domain
         public GetAggregateTest()
         {
             var eventStore = new TestEventStore();
-            _session = new Session(new Repository(eventStore));
+            var eventStoreSettings = new TestEventStoreSettings { SessionLockEnabled = false };
+            _session = new Session(new Repository(eventStore), eventStoreSettings, null);
         }
 
         [TestMethod]
