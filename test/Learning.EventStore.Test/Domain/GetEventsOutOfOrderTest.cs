@@ -15,8 +15,7 @@ namespace Learning.EventStore.Test.Domain
         public GetEventsOutOfOrderTest()
         {
             var eventStore = new TestEventStoreWithBugs();
-            var eventStoreSettings = new TestEventStoreSettings { SessionLockEnabled = false };
-            _session = new Session(new Repository(eventStore), eventStoreSettings, null);
+            _session = new Session(new Repository(eventStore));
         }
 
         [TestMethod]

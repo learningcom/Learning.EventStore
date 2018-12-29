@@ -10,7 +10,7 @@
         //// <summary>
         /// Use a distributed lock for aggregates within a session
         /// </summary>
-        public bool SessionLockEnabled { get; set; } = true;
+        public bool SessionLockEnabled { get; set; } = false;
         
         /// <summary>
         /// The expiration time in seconds of the session lock

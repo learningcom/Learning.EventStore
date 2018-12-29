@@ -16,6 +16,12 @@ namespace Learning.EventStore.Domain
         private readonly IDistributedLockFactory _distributedLockFactory;
         private readonly List<IRedLock> _distributedLocks = new List<IRedLock>();
         private readonly EventStoreSettings _eventStoreSettings;
+        private readonly bool _sessionLockEnabled = false;
+
+        public Session(IRepository repository)
+            : this(repository, null, null)
+        {
+        }
 
         public Session(IRepository repository, EventStoreSettings eventStoreSettings, IDistributedLockFactory distributedLockFactory)
         {
@@ -27,33 +33,23 @@ namespace Learning.EventStore.Domain
             _repository = repository;
             _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
             _eventStoreSettings = eventStoreSettings;
-            if(eventStoreSettings.SessionLockEnabled) 
+            if(eventStoreSettings != null && eventStoreSettings.SessionLockEnabled) 
             {
+                _sessionLockEnabled = true;
                 _distributedLockFactory = distributedLockFactory ?? throw new ArgumentNullException(nameof(distributedLockFactory));
             }
         }
 
         public void Add<T>(T aggregate) where T : AggregateRoot
         {
+            AddAsync(aggregate).GetAwaiter().GetResult();
+        }
+        
+        public async Task AddAsync<T>(T aggregate) where T : AggregateRoot
+        {
             if (!IsTracked(aggregate.Id))
             {
-                if(_eventStoreSettings.SessionLockEnabled)
-                {
-                    var distributedLock = _distributedLockFactory.CreateLock(
-                        aggregate.Id,
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockExpirySeconds),
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockWaitSeconds),
-                        TimeSpan.FromMilliseconds(_eventStoreSettings.SessionLockRetryMilliseconds));
-
-                    if(distributedLock.IsAcquired)
-                    {
-                        _distributedLocks.Add(distributedLock);
-                    }
-                    else
-                    {
-                        throw new DistributedLockException(aggregate.Id, _eventStoreSettings);
-                    }
-                }
+                await GetLock(aggregate.Id).ConfigureAwait(false);
                 _trackedAggregates.Add(aggregate.Id, new AggregateDescriptor { Aggregate = aggregate, Version = aggregate.Version });
             }
             else if (_trackedAggregates[aggregate.Id].Aggregate != aggregate)
@@ -74,31 +70,10 @@ namespace Learning.EventStore.Domain
                 return trackedAggregate;
             }
 
-            T aggregate = null;
-            if(_eventStoreSettings.SessionLockEnabled)
-            {
-                using (var distributedLock = _distributedLockFactory.CreateLock(
-                        id,
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockExpirySeconds),
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockWaitSeconds),
-                        TimeSpan.FromMilliseconds(_eventStoreSettings.SessionLockRetryMilliseconds)))
-                {
-                    if (distributedLock.IsAcquired)
-                    {
-                        aggregate = await _repository.GetAsync<T>(id).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        throw new DistributedLockException(aggregate.Id, _eventStoreSettings);
-                    }
-                }
-            }
-            else
-            {
-                aggregate = await _repository.GetAsync<T>(id).ConfigureAwait(false);
-            }
-            
-            
+            await GetLock(id).ConfigureAwait(false);
+
+            var aggregate = await _repository.GetAsync<T>(id).ConfigureAwait(false);
+             
             if (aggregate == null)
             {
                 return null;
@@ -109,18 +84,15 @@ namespace Learning.EventStore.Domain
                 throw new ConcurrencyException(id);
             }
             
-            Add(aggregate);
+            await AddAsync(aggregate).ConfigureAwait(false);
 
             return aggregate;
         }
 
-        private bool IsTracked(string id)
-        {
-            return _trackedAggregates.ContainsKey(id);
-        }
-
         public async Task CommitAsync()
         {
+            ValidateLockState();
+
             foreach (var descriptor in _trackedAggregates.Values)
             {
                 try
@@ -134,9 +106,9 @@ namespace Learning.EventStore.Domain
                 }
                 finally
                 {
-                    var distributedLock = _distributedLocks.FirstOrDefault(x => x.LockId == descriptor.Aggregate.Id);
-                    if (distributedLock != null)
+                    if (_sessionLockEnabled)
                     {
+                        var distributedLock = _distributedLocks.FirstOrDefault(x => x.Resource == descriptor.Aggregate.Id);
                         distributedLock.Dispose();
                     }
                 }
@@ -151,5 +123,68 @@ namespace Learning.EventStore.Domain
                 distributedLock.Dispose();
             }
         }
+
+        private void ValidateLockState()
+        {
+            if (_sessionLockEnabled)
+            {
+                foreach (var descriptor in _trackedAggregates.Values)
+                {
+                    var distributedLock = _distributedLocks.FirstOrDefault(x => x.Resource == descriptor.Aggregate.Id);
+
+                    if (distributedLock == null)
+                    {
+                        throw new DistributedLockException($"No lock found for aggregate '{descriptor.Aggregate.Id}. Aborting session commit.");
+                    }
+
+                    if (distributedLock.Status == RedLockStatus.Expired)
+                    {
+                        throw new DistributedLockException($"Session lock expired for aggregate '{descriptor.Aggregate.Id} after {_eventStoreSettings.SessionLockExpirySeconds} seconds. Aborting session commit.");
+                    }
+                }
+            }
+        }
+
+        private async Task GetLock(string aggregateId)
+        {
+            if (_sessionLockEnabled)
+            {
+                var existingLock = _distributedLocks.FirstOrDefault(x => x.Resource == aggregateId);
+
+                if  (existingLock != null)
+                {
+                    if (existingLock.Status == RedLockStatus.Expired)
+                    {
+                        _distributedLocks.Remove(existingLock);
+                        existingLock.Dispose();
+                        throw new DistributedLockException($"Existing session lock expired for aggregate '{aggregateId} after {_eventStoreSettings.SessionLockExpirySeconds} seconds.");
+                    }
+                }
+                else
+                {
+                    var distributedLock = await _distributedLockFactory.CreateLockAsync(
+                        aggregateId,
+                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockExpirySeconds),
+                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockWaitSeconds),
+                        TimeSpan.FromMilliseconds(_eventStoreSettings.SessionLockRetryMilliseconds))
+                        .ConfigureAwait(false);
+
+                    if(distributedLock.IsAcquired)
+                    {
+                        _distributedLocks.Add(distributedLock);
+                    }
+                    else
+                    {
+                        throw new DistributedLockException(distributedLock, _eventStoreSettings);
+                    }
+                }
+            }
+        }
+
+        private bool IsTracked(string id)
+        {
+            return _trackedAggregates.ContainsKey(id);
+        }
+
     }
 }
