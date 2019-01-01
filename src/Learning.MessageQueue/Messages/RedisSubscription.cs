@@ -47,5 +47,12 @@ namespace Learning.MessageQueue.Messages
             _logger.LogWarning(message);
 #endif
         }
+
+        protected virtual void LogDebug(string message)
+        {
+#if !NET46 && !NET452
+            _logger.LogDebug(message);
+#endif
+        }
     }
 }
