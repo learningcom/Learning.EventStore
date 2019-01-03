@@ -127,9 +127,9 @@ namespace Learning.EventStore.Test.RedisEventStore
         }
 
         [TestMethod]
-        public void ThrowsArgumentExceptionIfEventStoreSettingsConstructorIsUsedAndKeyPrefixIsNotSet()
+        public void ThrowsArgumentExceptionIfEventStoreSettingsConstructorIsUsedAndApplicationNameIsNotSet()
         {
-            var settings = new EventStoreSettings();
+            var settings = new RedisEventStoreSettings();
 
             try
             {
@@ -138,7 +138,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             }
             catch (ArgumentException e)
             {
-                Assert.AreEqual("KeyPrefix must be specified in EventStoreSettings", e.Message);
+                Assert.AreEqual("ApplicationName must be specified in RedisEventStoreSettings", e.Message);
             }
         }
     }

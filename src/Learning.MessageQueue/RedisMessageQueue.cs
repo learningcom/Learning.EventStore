@@ -12,20 +12,20 @@ namespace Learning.MessageQueue
     public class RedisMessageQueue : IMessageQueue
     {
         private readonly IRedisClient _redis;
-        private readonly EventStoreSettings _settings;
+        private readonly RedisEventStoreSettings _settings;
         private readonly string _environment;
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
-        public RedisMessageQueue(IRedisClient redis, string keyPrefix, string environment)
-            : this(redis, new EventStoreSettings { KeyPrefix = keyPrefix }, environment)
+        public RedisMessageQueue(IRedisClient redis, string applicationName, string environment)
+            : this(redis, new RedisEventStoreSettings { ApplicationName = applicationName }, environment)
         {
         }
 
-        public RedisMessageQueue(IRedisClient redis, EventStoreSettings settings, string environment)
+        public RedisMessageQueue(IRedisClient redis, RedisEventStoreSettings settings, string environment)
         {
-            if (string.IsNullOrWhiteSpace(settings.KeyPrefix))
+            if (string.IsNullOrWhiteSpace(settings.ApplicationName))
             {
-                throw new ArgumentException("KeyPrefix must be specified in EventStoreSettings");
+                throw new ArgumentException("ApplicationName must be specified in RedisEventStoreSettings");
             }
 
             _redis = redis;

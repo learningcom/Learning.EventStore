@@ -1,12 +1,7 @@
-﻿namespace Learning.EventStore.Common.Redis
+namespace Learning.EventStore.Common.Redis
 {
-    public class EventStoreSettings
+    public class RedisEventStoreSettings : EventStoreSettings
     {
-        /// <summary>
-        /// The application name
-        /// </summary>
-        public string KeyPrefix { get; set; }
-
         /// <summary>
         /// Enable gzip compression of event store entries
         /// </summary>

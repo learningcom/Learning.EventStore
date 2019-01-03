@@ -68,9 +68,9 @@ namespace Learning.EventStore.Sample.Web
             // Set up EventStore
             var keyPrefix = "Learning.EventStore.Sample.Web";
             services.AddMemoryCache();
-            var eventStoreSettings = new EventStoreSettings
+            var eventStoreSettings = new RedisEventStoreSettings
             {
-                KeyPrefix = keyPrefix,
+                ApplicationName = keyPrefix,
                 EnableCompression = false
             };
             services.AddSingleton<IRedisClient>(y => new RedisClient(y.GetService<Lazy<IConnectionMultiplexer>>()));

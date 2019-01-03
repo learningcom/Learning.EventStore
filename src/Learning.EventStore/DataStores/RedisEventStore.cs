@@ -15,20 +15,20 @@ namespace Learning.EventStore.DataStores
     public class RedisEventStore : IEventStore
     {
         private readonly IRedisClient _redis;
-        private readonly EventStoreSettings _settings;
+        private readonly RedisEventStoreSettings _settings;
         private readonly IMessageQueue _messageQueue;
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
 
-        public RedisEventStore(IRedisClient redis, string keyPrefix, IMessageQueue messageQueue)
-            : this(redis, new EventStoreSettings {KeyPrefix = keyPrefix}, messageQueue)
+        public RedisEventStore(IRedisClient redis, string applicationName, IMessageQueue messageQueue)
+            : this(redis, new RedisEventStoreSettings {ApplicationName = applicationName}, messageQueue)
         {
         }
 
-        public RedisEventStore(IRedisClient redis, EventStoreSettings settings, IMessageQueue messageQueue)
+        public RedisEventStore(IRedisClient redis, RedisEventStoreSettings settings, IMessageQueue messageQueue)
         {
-            if (string.IsNullOrWhiteSpace(settings.KeyPrefix))
+            if (string.IsNullOrWhiteSpace(settings.ApplicationName))
             {
-                throw new ArgumentException("KeyPrefix must be specified in EventStoreSettings");
+                throw new ArgumentException("ApplicationName must be specified in RedisEventStoreSettings");
             }
 
             _redis = redis;
@@ -40,14 +40,14 @@ namespace Learning.EventStore.DataStores
         {
             //Get all the commits for the aggregateId that have happened since specified fromVersion
             var rangeStart = fromVersion < 0 ? 0 : fromVersion;
-            var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{aggregateId}";
+            var listKey = $"{{EventStore:{_settings.ApplicationName}}}:{aggregateId}";
             var commits = await _redis.ListRangeAsync(listKey, rangeStart, -1).ConfigureAwait(false);
             
             //Retrieve event data for each commit
             var eventTasks = commits.Select(commit =>
             {
                 var partition = commit.ToString().CalculatePartition();
-                var hashKeyBase = $"EventStore:{_settings.KeyPrefix}";
+                var hashKeyBase = $"EventStore:{_settings.ApplicationName}";
 
                 var hashGetTask = _redis.HashGetAsync($"{hashKeyBase}:{partition}", commit);
                 return hashGetTask;
@@ -65,8 +65,8 @@ namespace Learning.EventStore.DataStores
         {
             foreach (var @event in events)
             {
-                var hashKeyBase = $"EventStore:{_settings.KeyPrefix}";
-                var listKey = $"{{EventStore:{_settings.KeyPrefix}}}:{@event.Id}";
+                var hashKeyBase = $"EventStore:{_settings.ApplicationName}";
+                var listKey = $"{{EventStore:{_settings.ApplicationName}}}:{@event.Id}";
 
                 var serializedEvent = JsonConvert.SerializeObject(@event, JsonSerializerSettings);
                 var eventData = _settings.EnableCompression
