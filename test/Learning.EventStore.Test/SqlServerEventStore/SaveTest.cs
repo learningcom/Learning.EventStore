@@ -64,7 +64,7 @@ namespace Learning.EventStore.Test.SqlServerEventStore
             {
                 await _sqlEventStore.SaveAsync(_eventList);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 A.CallTo(() => _dapper.ExecuteAsync(_writeDbConnection, A<string>._, A<EventDto>._, CommandType.StoredProcedure, _transaction)).MustHaveHappened();
                 A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._))

@@ -18,6 +18,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             var subscriber = new MessageQueue.RedisEventSubscriber(redis, "TestPrefix", "Test");
             var eventData = new TestEvent();
             var serializedEvent = JsonConvert.SerializeObject(eventData);
+            var transaction = A.Fake<ITransaction>();
             TestEvent callbackData = null;
 
             A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(serializedEvent);
@@ -27,6 +28,9 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
                     var action = callObject.Arguments[1] as Action<RedisChannel, RedisValue>;
                     action(callObject.Arguments[0].ToString(), serializedEvent);
                 });
+            A.CallTo(() => redis.CreateTransaction()).Returns(transaction);
+            A.CallTo(() => redis.ExecuteTransactionAsync(transaction)).Returns(true);
+            
 
             Action<TestEvent> cb = (data) =>
             {
@@ -43,7 +47,7 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
             {
                 Assert.AreEqual("Oh No!", e.InnerException.InnerException.Message);
                 A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
-                A.CallTo(() => redis.ListLeftPush("TestPrefix:{Test:TestEvent}:DeadLetters", serializedEvent)).MustHaveHappened();
+                A.CallTo(() => transaction.ListLeftPushAsync("TestPrefix:{Test:TestEvent}:DeadLetters", serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened();
                 A.CallTo(() => redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", serializedEvent)).MustHaveHappened();
             }
         }
