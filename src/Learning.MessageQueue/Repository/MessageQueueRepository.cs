@@ -11,17 +11,17 @@ namespace Learning.MessageQueue.Repository
     {
         private readonly IRedisClient _redisClient;
         private readonly string _environment;
-        private readonly string _keyPrefix;
+        private readonly string _applicationName;
 
         private const string RetryCountFieldName = "RetryCount";
         private const string LastRetryTimeFieldName = "LastRetryTime";
         private const string LastExceptionFieldName = "LastException";
 
-        public MessageQueueRepository(IRedisClient redisClient, string environment, string keyPrefix)
+        public MessageQueueRepository(IRedisClient redisClient, string environment, string applicationName)
         {
             _redisClient = redisClient;
             _environment = environment;
-            _keyPrefix = keyPrefix;
+            _applicationName = applicationName;
         }
 
         public async Task<long> GetDeadLetterListLength<T>() where T : IMessage
@@ -40,6 +40,19 @@ namespace Learning.MessageQueue.Repository
             var unprocessedEvent = await _redisClient.ListGetByIndexAsync(deadLetterListKey, index).ConfigureAwait(false);
 
             return unprocessedEvent;
+        }
+
+        public void AddToDeadLetterQueue<T>(RedisValue eventData, IMessage @event, Exception exception) where T : IMessage
+        {   
+            var message = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
+            var retryDataHashKey = GetRetryDataHashKey(@event);
+            var deadLetterListKey = GetDeadLetterListKey<T>();
+            var tran = _redisClient.CreateTransaction();
+
+            tran.ListLeftPushAsync(deadLetterListKey, eventData);
+            tran.HashSetAsync(retryDataHashKey, LastExceptionFieldName, message);
+
+            ExcecuteTransaction(tran, @event.Id).GetAwaiter().GetResult();
         }
 
         public async Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, T @event) where T : IMessage
@@ -86,7 +99,7 @@ namespace Learning.MessageQueue.Repository
         {
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
-            var processingListKey = $"{_keyPrefix}:{{{eventKey}}}:DeadLetters";
+            var processingListKey = $"{_applicationName}:{{{eventKey}}}:DeadLetters";
 
             return processingListKey;
         }

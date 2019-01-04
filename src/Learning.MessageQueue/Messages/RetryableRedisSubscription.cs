@@ -5,6 +5,7 @@ using Learning.MessageQueue.Repository;
 using Microsoft.Extensions.Logging;
 #endif
 using Newtonsoft.Json;
+using StackExchange.Redis;
 
 namespace Learning.MessageQueue.Messages
 {
@@ -29,9 +30,8 @@ namespace Learning.MessageQueue.Messages
             _messageQueueRepository = messageQueueRepository;
         }
 
-        public virtual int RetryForHours { get; set; } = 0;
-
-        public virtual int RetryLimit { get; set; } = 5;
+        
+        public virtual int TimeToLiveHours { get; set; } = 168;
 
         public virtual int RetryIntervalMinutes { get; set; } = 5;
 
@@ -63,7 +63,7 @@ namespace Learning.MessageQueue.Messages
 
                 try
                 {
-                    if (await ShouldRetry(@event).ConfigureAwait(false))
+                    if (await ShouldRetry(@event, eventData).ConfigureAwait(false))
                     {
                         LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
 
@@ -100,7 +100,7 @@ namespace Learning.MessageQueue.Messages
             CallBack(message);
         }
 
-        protected virtual async Task<bool> ShouldRetry(IMessage @event)
+        protected virtual async Task<bool> ShouldRetry(IMessage @event, RedisValue eventData)
         {
             var retryData = await _messageQueueRepository.GetRetryData(@event).ConfigureAwait(false);
 
@@ -111,19 +111,15 @@ namespace Learning.MessageQueue.Messages
 
             if (!intervalPassed && retryData.RetryCount > 0)
             {
-                LogInformation($"Skipping retry for event with Aggregate Id {@event.Id}; Retry interval has not elapsed.");
+                LogDebug($"Skipping retry for event with Aggregate Id {@event.Id}; Retry interval has not elapsed.");
                 return false;
             }
 
-            if (RetryForHours != default(int) &&
-                DateTimeOffset.UtcNow < @event.TimeStamp.ToUniversalTime().AddHours(RetryForHours))
+            if (TimeToLiveHours != default(int) &&
+                DateTimeOffset.UtcNow > @event.TimeStamp.ToUniversalTime().AddHours(TimeToLiveHours))
             {
-                return true;
-            }
-
-            if (retryData.RetryCount > RetryLimit)
-            {
-                LogInformation($"Skipping retry for event with Aggregate Id {@event.Id}; Retry threshold reached");
+                LogDebug($"Time to live of {TimeToLiveHours} hours exceeded for event with Aggregate Id {@event.Id}; Deleting from the dead letter queue.");
+                await _messageQueueRepository.DeleteFromDeadLetterQueue(eventData, @event).ConfigureAwait(false);
                 return false;
             }
 

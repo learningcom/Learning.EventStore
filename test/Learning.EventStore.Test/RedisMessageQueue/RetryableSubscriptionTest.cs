@@ -64,29 +64,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
         }
 
         [TestMethod]
-        public async Task DoesNotCallCallbackIfRetryCounterIsGreaterThanThreshold()
-        {
-            var logger = A.Fake<ILogger>();
-            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
-            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
-            var message = new TestMessage { Id = "0" };
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
-            var retryData = new RetryData
-            {
-                LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
-                RetryCount = 6
-            };
-            A.CallTo(() => eventStoreRepository.GetRetryData(A<TestMessage>._)).Returns(retryData);
-            var subscriber = A.Fake<IEventSubscriber>();
-            var retryClass = new TestRetryClass(subscriber, logger, eventStoreRepository);
-
-            await retryClass.RetryAsync().ConfigureAwait(false);
-
-            Assert.IsFalse(retryClass.CallBack1Called);
-        }
-
-        [TestMethod]
-        public async Task CallsCallbackIfRetryCounterIsGreaterThanThresholdButRetryForHoursIsSetAndHasNotBeenExceeded()
+        public async Task CallsCallbackIfTimeToLiveHasNotBeenExceeded()
         {
             var logger = A.Fake<ILogger>();
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
@@ -105,15 +83,16 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsTrue(retryClass.CallBack1Called);
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustNotHaveHappened();
         }
 
         [TestMethod]
-        public async Task DoesNotCallCallbackIfRetryForHoursIsSetAndHasBeenExceeded()
+        public async Task DoesNotCallCallbackAndDeletesFromDeadLetterQueueIfTimeToLiveIsExceeded()
         {
             var logger = A.Fake<ILogger>();
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestMessage>()).Returns(1);
-            var message = new TestMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-3) };
+            var message = new TestMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-169) };
             A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestMessage>(0)).Returns(JsonConvert.SerializeObject(message));
             var retryData = new RetryData
             {
@@ -127,6 +106,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsFalse(retryClass.CallBack1Called);
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustHaveHappened();
         }
 
         [TestMethod]
@@ -209,7 +189,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
         public bool CallBack2Called;
         public bool CallBack3Called;
 
-        public override int RetryForHours { get; set; } = 2;
+        public override int TimeToLiveHours { get; set; } = 2;
 
         public TestRetryHoursSubscription(IEventSubscriber subscriber, ILogger logger, IMessageQueueRepository messageQueueRepository) 
             : base(subscriber, logger, messageQueueRepository)
@@ -236,6 +216,6 @@ namespace Learning.EventStore.Test.RedisMessageQueue
     public class TestMessage : IMessage
     {
         public string Id { get; set; }
-        public DateTimeOffset TimeStamp { get; set; }
+        public DateTimeOffset TimeStamp { get; set; } = DateTimeOffset.UtcNow;
     }
 }
