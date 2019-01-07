@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
-using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Domain.Exceptions;
 using RedLockNet;
 
@@ -25,12 +24,7 @@ namespace Learning.EventStore.Domain
 
         public Session(IRepository repository, EventStoreSettings eventStoreSettings, IDistributedLockFactory distributedLockFactory)
         {
-            if (repository == null)
-            {
-                throw new ArgumentNullException(nameof(repository));
-            }
-
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
             _eventStoreSettings = eventStoreSettings;
             if(eventStoreSettings != null && eventStoreSettings.SessionLockEnabled) 
@@ -109,7 +103,7 @@ namespace Learning.EventStore.Domain
                     if (_sessionLockEnabled)
                     {
                         var distributedLock = _distributedLocks.FirstOrDefault(x => x.Resource == descriptor.Aggregate.Id);
-                        distributedLock.Dispose();
+                        distributedLock?.Dispose();
                     }
                 }
             }

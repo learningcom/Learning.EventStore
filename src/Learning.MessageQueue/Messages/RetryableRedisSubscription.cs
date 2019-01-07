@@ -68,7 +68,7 @@ namespace Learning.MessageQueue.Messages
                         LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
 
                         await RetryCallBackAsync(@event).ConfigureAwait(false);
-                        await _messageQueueRepository.DeleteFromDeadLetterQueue(eventData, @event).ConfigureAwait(false);
+                        await _messageQueueRepository.DeleteFromDeadLetterQueue<T>(eventData, @event).ConfigureAwait(false);
                         eventsProcessed++;
 
                         LogInformation($"Completed retry of processing for {eventType} event for Aggregate: {@event.Id}");
@@ -119,7 +119,7 @@ namespace Learning.MessageQueue.Messages
                 DateTimeOffset.UtcNow > @event.TimeStamp.ToUniversalTime().AddHours(TimeToLiveHours))
             {
                 LogDebug($"Time to live of {TimeToLiveHours} hours exceeded for event with Aggregate Id {@event.Id}; Deleting from the dead letter queue.");
-                await _messageQueueRepository.DeleteFromDeadLetterQueue(eventData, @event).ConfigureAwait(false);
+                await _messageQueueRepository.DeleteFromDeadLetterQueue<T>(eventData, @event).ConfigureAwait(false);
                 return false;
             }
 

@@ -37,7 +37,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             Assert.IsTrue(retryClass.CallBack1Called);
             Assert.IsTrue(retryClass.CallBack2Called);
             Assert.IsTrue(retryClass.CallBack3Called);
-            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<TestMessage>._))
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<TestMessage>._))
                 .MustHaveHappened(Repeated.Exactly.Times(3));
         }
 
@@ -83,7 +83,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsTrue(retryClass.CallBack1Called);
-            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustNotHaveHappened();
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustNotHaveHappened();
         }
 
         [TestMethod]
@@ -106,7 +106,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsFalse(retryClass.CallBack1Called);
-            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustHaveHappened();
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustHaveHappened();
         }
 
         [TestMethod]

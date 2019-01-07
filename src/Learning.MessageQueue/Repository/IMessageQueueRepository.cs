@@ -14,7 +14,7 @@ namespace Learning.MessageQueue.Repository
 
         void AddToDeadLetterQueue<T>(RedisValue eventData, IMessage @event, Exception exception) where T : IMessage;
 
-        Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, T @event) where T : IMessage;
+        Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, IMessage @event) where T : IMessage;
 
         Task UpdateRetryData(IMessage @event, string exceptionMessage);
 

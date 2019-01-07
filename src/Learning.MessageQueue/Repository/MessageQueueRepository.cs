@@ -55,7 +55,7 @@ namespace Learning.MessageQueue.Repository
             ExcecuteTransaction(tran, @event.Id).GetAwaiter().GetResult();
         }
 
-        public async Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, T @event) where T : IMessage
+        public async Task DeleteFromDeadLetterQueue<T>(RedisValue valueToRemove, IMessage @event) where T : IMessage
         {
             var deadLetterListKey = GetDeadLetterListKey<T>();
             var retryDataHashKey = GetRetryDataHashKey(@event);
