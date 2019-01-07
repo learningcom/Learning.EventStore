@@ -61,6 +61,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
 
             A.CallTo(() => eventStoreRepository.UpdateRetryData(A<IMessage>._, A<string>._)).MustHaveHappened();
             A.CallTo(() => logger.Log(LogLevel.Warning, 0, A<object>._, null, A<Func<object, Exception, string>>._)).MustHaveHappened();
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustNotHaveHappened();
         }
 
         [TestMethod]
@@ -83,7 +84,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsTrue(retryClass.CallBack1Called);
-            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustNotHaveHappened();
+            A.CallTo(() => eventStoreRepository.DeleteFromDeadLetterQueue<TestMessage>(A<RedisValue>._, A<IMessage>.That.Matches(x => x.Id == message.Id))).MustHaveHappened();
         }
 
         [TestMethod]
