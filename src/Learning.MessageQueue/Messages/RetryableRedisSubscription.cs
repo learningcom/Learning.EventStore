@@ -17,7 +17,12 @@ namespace Learning.MessageQueue.Messages
         private readonly ILogger _logger;
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, ILogger logger, IMessageQueueRepository messageQueueRepository)
-            : base(subscriber, logger)
+            : this(subscriber, logger, messageQueueRepository, false)
+        {
+        }
+
+        protected RetryableRedisSubscription(IEventSubscriber subscriber, ILogger logger, IMessageQueueRepository messageQueueRepository, bool useLock)
+            : base(subscriber, logger, useLock)
         {
             _logger = logger;
             _messageQueueRepository = messageQueueRepository;
@@ -25,7 +30,12 @@ namespace Learning.MessageQueue.Messages
 #endif
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository)
-            :base(subscriber)
+            : this(subscriber, messageQueueRepository, false)
+        {
+        }
+
+        protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository, bool useLock)
+            :base(subscriber, useLock)
         {
             _messageQueueRepository = messageQueueRepository;
         }
