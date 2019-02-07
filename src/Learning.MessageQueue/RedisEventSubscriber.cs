@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
-using System.Xml;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Common.Redis;
 using Learning.MessageQueue.Messages;
 using Learning.MessageQueue.Repository;
@@ -9,6 +10,7 @@ using Learning.MessageQueue.Repository;
 using Microsoft.Extensions.Logging;
 #endif
 using Newtonsoft.Json;
+using RedLockNet;
 using StackExchange.Redis;
 
 namespace Learning.MessageQueue
@@ -19,30 +21,66 @@ namespace Learning.MessageQueue
         private readonly IRedisClient _redisClient;
         private readonly string _applicationName;
         private readonly string _environment;
+        private readonly IDistributedLockFactory _distributedLockFactory;
+        private readonly DistributedLockSettings _lockSettings;
 
 #if !NET46 && !NET452
         private readonly ILogger _logger;
 
         public RedisEventSubscriber(IRedisClient redisClient, string applicationName, string environment, ILoggerFactory loggerFactory)
+            : this(redisClient, applicationName, environment, loggerFactory, null)
+        {
+        }
+
+        public RedisEventSubscriber(
+            IRedisClient redisClient,
+            string applicationName, 
+            string environment, 
+            ILoggerFactory loggerFactory, 
+            IDistributedLockFactory distributedLockFactory, 
+            DistributedLockSettings lockSettings = null)
         {
             _redisClient = redisClient;
             _messageQueueRepository = new MessageQueueRepository(_redisClient, environment, applicationName);
             _applicationName = applicationName;
             _environment = environment;
+            _distributedLockFactory = distributedLockFactory;
             _logger = loggerFactory.CreateLogger(GetType().Name);
+            _lockSettings = lockSettings ?? new DistributedLockSettings();
         }
 #endif
-
         public RedisEventSubscriber(IRedisClient redis, string applicationName, string environment)
+            : this(redis, applicationName, environment, null as IDistributedLockFactory)
+        {
+        }
+
+        public RedisEventSubscriber(
+            IRedisClient redis, 
+            string applicationName, 
+            string environment, 
+            IDistributedLockFactory distributedLockFactory, 
+            DistributedLockSettings lockSettings = null)
         {
             _redisClient = redis;
             _messageQueueRepository = new MessageQueueRepository(_redisClient, environment, applicationName);
             _applicationName = applicationName;
             _environment = environment;
+            _distributedLockFactory = distributedLockFactory;
+            _lockSettings = lockSettings ?? new DistributedLockSettings();
         }
 
         public async Task SubscribeAsync<T>(Action<T> callBack) where T : IMessage
         {
+            await SubscribeAsync(callBack, false).ConfigureAwait(false);
+        }
+
+        public async Task SubscribeAsync<T>(Action<T> callBack, bool enableLock) where T : IMessage
+        {
+            if (enableLock && _distributedLockFactory == null)
+            {
+                throw new ArgumentNullException(nameof(_distributedLockFactory), "IDistributedLockFactory must be set in constructor if lock is enabled");
+            }
+
             //Register subscriber
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
@@ -55,37 +93,27 @@ namespace Learning.MessageQueue
             {
                 try
                 {
-                    var processingListKey = $"{_applicationName}:{{{eventKey}}}:ProcessingEvents";
-
-                    /*
-                    Pop the event out of the queue and atomicaly push it into another 'processing' list.
-                    Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
-                    */
-                    var eventData = _redisClient.ListRightPopLeftPush(publishedListKey, processingListKey);
-
-                    // if the eventData is null, then the event has already been processed by another instance, skip further execution
-                    if (!eventData.HasValue)
+                    if (enableLock)
                     {
-                        return;
+                        using(var distributedLock = _distributedLockFactory.CreateLock(
+                            eventKey,
+                            TimeSpan.FromSeconds(_lockSettings.ExpirySeconds),
+                            TimeSpan.FromSeconds(_lockSettings.WaitSeconds),
+                            TimeSpan.FromMilliseconds(_lockSettings.RetryMilliseconds)))
+                        {
+                            if (distributedLock.IsAcquired)
+                            {
+                                ExecuteCallback(callBack);
+                            }
+                            else
+                            {
+                                throw new DistributedLockException(distributedLock, _lockSettings);
+                            }
+                        }
                     }
-
-                    //Deserialize the event data and invoke the handler
-                    var message = JsonConvert.DeserializeObject<T>(eventData);
-                    try
+                    else
                     {
-                        
-                        callBack.Invoke(message);
-                    }
-                    catch (Exception e)
-                    {
-                        _messageQueueRepository.AddToDeadLetterQueue<T>(eventData, message, e);
-
-                        throw;
-                    }
-                    finally
-                    {
-                        //Remove the event from the 'processing' list.
-                        _redisClient.ListRemove(processingListKey, eventData);
+                        ExecuteCallback(callBack);
                     }
                 }
                 catch (Exception e)
@@ -115,6 +143,44 @@ namespace Learning.MessageQueue
                     _logger.LogError(e, e.Message);
 #endif
                 }
+            }
+        }
+
+        private void ExecuteCallback<T>(Action<T> callBack) where T : IMessage
+        {
+            var eventType = typeof(T).Name;
+            var eventKey = $"{_environment}:{eventType}";
+            var publishedListKey = $"{_applicationName}:{{{eventKey}}}:PublishedEvents";
+            var processingListKey = $"{_applicationName}:{{{eventKey}}}:ProcessingEvents";
+
+            /*
+            Pop the event out of the queue and atomicaly push it into another 'processing' list.
+            Creates a reliable queue where events can be retried if processing fails, see https://redis.io/commands/rpoplpush.
+            */
+            var eventData = _redisClient.ListRightPopLeftPush(publishedListKey, processingListKey);
+
+            // if the eventData is null, then the event has already been processed by another instance, skip further execution
+            if (!eventData.HasValue)
+            {
+                return;
+            }
+
+            //Deserialize the event data and invoke the handler
+            var message = JsonConvert.DeserializeObject<T>(eventData);
+            try
+            {
+                callBack.Invoke(message);
+            }
+            catch (Exception e)
+            {
+                _messageQueueRepository.AddToDeadLetterQueue<T>(eventData, message, e);
+
+                throw;
+            }
+            finally
+            {
+                //Remove the event from the 'processing' list.
+                _redisClient.ListRemove(processingListKey, eventData);
             }
         }
     }

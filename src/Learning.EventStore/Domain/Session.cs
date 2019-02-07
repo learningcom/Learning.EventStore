@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
+using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Domain.Exceptions;
 using RedLockNet;
 
@@ -133,7 +134,7 @@ namespace Learning.EventStore.Domain
 
                     if (distributedLock.Status == RedLockStatus.Expired)
                     {
-                        throw new DistributedLockException($"Session lock expired for aggregate '{descriptor.Aggregate.Id} after {_eventStoreSettings.SessionLockExpirySeconds} seconds. Aborting session commit.");
+                        throw new DistributedLockException($"Session lock expired for aggregate '{descriptor.Aggregate.Id} after {_eventStoreSettings.ExpirySeconds} seconds. Aborting session commit.");
                     }
                 }
             }
@@ -151,16 +152,16 @@ namespace Learning.EventStore.Domain
                     {
                         _distributedLocks.Remove(existingLock);
                         existingLock.Dispose();
-                        throw new DistributedLockException($"Existing session lock expired for aggregate '{aggregateId} after {_eventStoreSettings.SessionLockExpirySeconds} seconds.");
+                        throw new DistributedLockException($"Existing session lock expired for aggregate '{aggregateId} after {_eventStoreSettings.ExpirySeconds} seconds.");
                     }
                 }
                 else
                 {
                     var distributedLock = await _distributedLockFactory.CreateLockAsync(
                         aggregateId,
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockExpirySeconds),
-                        TimeSpan.FromSeconds(_eventStoreSettings.SessionLockWaitSeconds),
-                        TimeSpan.FromMilliseconds(_eventStoreSettings.SessionLockRetryMilliseconds))
+                        TimeSpan.FromSeconds(_eventStoreSettings.ExpirySeconds),
+                        TimeSpan.FromSeconds(_eventStoreSettings.WaitSeconds),
+                        TimeSpan.FromMilliseconds(_eventStoreSettings.RetryMilliseconds))
                         .ConfigureAwait(false);
 
                     if(distributedLock.IsAcquired)
