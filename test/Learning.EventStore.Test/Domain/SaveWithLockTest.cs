@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
@@ -72,7 +73,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (DistributedLockException e)
             {
-                Assert.AreEqual($"Session lock expired for aggregate '{_aggregate.Id} after {_eventStoreSettings.SessionLockExpirySeconds} seconds. Aborting session commit.", e.Message);
+                Assert.AreEqual($"Session lock expired for aggregate '{_aggregate.Id} after {_eventStoreSettings.ExpirySeconds} seconds. Aborting session commit.", e.Message);
             }
         }
 
@@ -93,7 +94,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (DistributedLockException e)
             {
-                Assert.AreEqual($"Existing session lock expired for aggregate '{_aggregate.Id} after {_eventStoreSettings.SessionLockExpirySeconds} seconds.", e.Message);
+                Assert.AreEqual($"Existing session lock expired for aggregate '{_aggregate.Id} after {_eventStoreSettings.ExpirySeconds} seconds.", e.Message);
                 Assert.AreEqual(0, _eventStore.Events.Count);
                 A.CallTo(() => distributedLock.Dispose()).MustHaveHappened();
             }
@@ -115,7 +116,7 @@ namespace Learning.EventStore.Test.Domain
             }
             catch (DistributedLockException e)
             {
-                Assert.AreEqual($"Failed to get lock for Aggregate '{_aggregate.Id}' within {_eventStoreSettings.SessionLockWaitSeconds} seconds with status: NoQuorum", e.Message);
+                Assert.AreEqual($"Failed to get lock for Aggregate '{_aggregate.Id}' within {_eventStoreSettings.WaitSeconds} seconds with status: NoQuorum", e.Message);
             }
         }
     }

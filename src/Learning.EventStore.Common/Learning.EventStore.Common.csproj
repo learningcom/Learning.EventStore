@@ -14,6 +14,7 @@
     <PackageReference Include="Dapper" Version="1.50.5" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Polly" Version="6.1.0" />
+    <PackageReference Include="RedLock.net.StrongName" Version="2.1.0" />
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
     <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
