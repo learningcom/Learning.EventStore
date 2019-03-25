@@ -256,6 +256,12 @@ public class MyMessagePublisher
 
 You can subscribe to messages using `ISubscription` and `RedisMessageSubscriber` as described in "Subscribing to Events" section above.
 
+# Additional Resources #
+Here are a couple of blog posts about the philosophy behind this library and our experience using it in production at [Learning.com](https://www.learning.com)
+
+* [Scalable Microservices with Event Sourcing and Redis](https://medium.com/lcom-techblog/scalable-microservices-with-event-sourcing-and-redis-6aa245574db0)
+* [A Year with Redis Event Sourcing — Lessons Learned](https://medium.com/lcom-techblog/a-year-with-redis-event-sourcing-lessons-learned-6736068e17cc)
+
 # Contributing #
 Contributions are always welcome!
 
