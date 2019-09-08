@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using FakeItEasy;
+using Learning.EventStore.Common;
 using Learning.EventStore.Domain;
 using Learning.EventStore.Domain.Exceptions;
 using Learning.EventStore.Test.Mocks;
@@ -18,9 +19,9 @@ namespace Learning.EventStore.Test.Domain
         public GetAggregateWithLockTest()
         {
             var eventStore = new TestEventStore();
-            var eventStoreSettings = new TestEventStoreSettings { SessionLockEnabled = true };
+            var distributedLockSettings = new DistributedLockSettings();
             _distributedLockFactory = A.Fake<IDistributedLockFactory>();
-            _session = new Session(new Repository(eventStore), eventStoreSettings, _distributedLockFactory);
+            _session = new Session(new Repository(eventStore), _distributedLockFactory, true, distributedLockSettings);
         }
 
         [TestMethod]

@@ -15,22 +15,28 @@ namespace Learning.EventStore.Domain
         private readonly Dictionary<string, AggregateDescriptor> _trackedAggregates;
         private readonly IDistributedLockFactory _distributedLockFactory;
         private readonly List<IRedLock> _distributedLocks = new List<IRedLock>();
-        private readonly EventStoreSettings _eventStoreSettings;
-        private readonly bool _sessionLockEnabled = false;
+        private readonly DistributedLockSettings _distributedLockSettings;
+        private readonly bool _sessionLockEnabled;
 
         public Session(IRepository repository)
-            : this(repository, null, null)
+            : this(repository, null, false, null)
         {
         }
 
-        public Session(IRepository repository, EventStoreSettings eventStoreSettings, IDistributedLockFactory distributedLockFactory)
+        public Session(IRepository repository, IDistributedLockFactory distributedLockFactory, bool sessionLockEnabled)
+            : this(repository, distributedLockFactory, sessionLockEnabled, new DistributedLockSettings())
+        {
+        }
+
+        public Session(IRepository repository, IDistributedLockFactory distributedLockFactory, bool sessionLockEnabled, DistributedLockSettings distributedLockSettings)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
-            _eventStoreSettings = eventStoreSettings;
-            if(eventStoreSettings != null && eventStoreSettings.SessionLockEnabled) 
+            _sessionLockEnabled = sessionLockEnabled;
+
+            if(sessionLockEnabled)
             {
-                _sessionLockEnabled = true;
+                _distributedLockSettings = distributedLockSettings ?? throw new ArgumentException(nameof(distributedLockSettings));
                 _distributedLockFactory = distributedLockFactory ?? throw new ArgumentNullException(nameof(distributedLockFactory));
             }
         }
@@ -134,7 +140,7 @@ namespace Learning.EventStore.Domain
 
                     if (distributedLock.Status == RedLockStatus.Expired)
                     {
-                        throw new DistributedLockException($"Session lock expired for aggregate '{descriptor.Aggregate.Id} after {_eventStoreSettings.ExpirySeconds} seconds. Aborting session commit.");
+                        throw new DistributedLockException($"Session lock expired for aggregate '{descriptor.Aggregate.Id} after {_distributedLockSettings.ExpirySeconds} seconds. Aborting session commit.");
                     }
                 }
             }
@@ -152,16 +158,16 @@ namespace Learning.EventStore.Domain
                     {
                         _distributedLocks.Remove(existingLock);
                         existingLock.Dispose();
-                        throw new DistributedLockException($"Existing session lock expired for aggregate '{aggregateId} after {_eventStoreSettings.ExpirySeconds} seconds.");
+                        throw new DistributedLockException($"Existing session lock expired for aggregate '{aggregateId} after {_distributedLockSettings.ExpirySeconds} seconds.");
                     }
                 }
                 else
                 {
                     var distributedLock = await _distributedLockFactory.CreateLockAsync(
                         aggregateId,
-                        TimeSpan.FromSeconds(_eventStoreSettings.ExpirySeconds),
-                        TimeSpan.FromSeconds(_eventStoreSettings.WaitSeconds),
-                        TimeSpan.FromMilliseconds(_eventStoreSettings.RetryMilliseconds))
+                        TimeSpan.FromSeconds(_distributedLockSettings.ExpirySeconds),
+                        TimeSpan.FromSeconds(_distributedLockSettings.WaitSeconds),
+                        TimeSpan.FromMilliseconds(_distributedLockSettings.RetryMilliseconds))
                         .ConfigureAwait(false);
 
                     if(distributedLock.IsAcquired)
@@ -170,7 +176,7 @@ namespace Learning.EventStore.Domain
                     }
                     else
                     {
-                        throw new DistributedLockException(distributedLock, _eventStoreSettings);
+                        throw new DistributedLockException(distributedLock, _distributedLockSettings);
                     }
                 }
             }
