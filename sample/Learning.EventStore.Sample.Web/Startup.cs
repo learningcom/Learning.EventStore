@@ -74,7 +74,7 @@ namespace Learning.EventStore.Sample.Web
                 EnableCompression = false
             };
             services.AddSingleton<IRedisClient>(y => new RedisClient(y.GetService<Lazy<IConnectionMultiplexer>>()));
-            services.AddSingleton<IEventSubscriber>(y => new RedisEventSubscriber(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName, y.GetService<ILoggerFactory>()));
+            services.AddSingleton<IEventSubscriber>(y => new RedisEventSubscriber(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName));
             services.AddScoped<ISession, Session>();
             services.AddSingleton<IMessageQueue>(y => new RedisMessageQueue(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName));
             services.AddSingleton<IEventStore>(y => new RedisEventStore(y.GetService<IRedisClient>(), eventStoreSettings, y.GetService<IMessageQueue>()));
