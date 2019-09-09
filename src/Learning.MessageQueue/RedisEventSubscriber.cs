@@ -69,6 +69,7 @@ namespace Learning.MessageQueue
                 {
                     if (enableLock)
                     {
+                        _logger.Debug($"Distributed lock enabled. Attempting to get lock for message with ID {eventKey}...");
                         using(var distributedLock = _distributedLockFactory.CreateLock(
                             eventKey,
                             TimeSpan.FromSeconds(_lockSettings.ExpirySeconds),
@@ -77,6 +78,7 @@ namespace Learning.MessageQueue
                         {
                             if (distributedLock.IsAcquired)
                             {
+                                _logger.Debug($"Distributed lock acquired for message with ID {eventKey}; LockId: {distributedLock.LockId};");
                                 ExecuteCallback(callBack);
                             }
                             else
