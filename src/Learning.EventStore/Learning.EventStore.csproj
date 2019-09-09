@@ -15,6 +15,10 @@
   <ItemGroup>
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
     <PackageReference Include="Dapper" Version="1.50.5" />
+    <PackageReference Include="LibLog" Version="5.0.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Npgsql" Version="4.0.3" />
     <PackageReference Include="Polly" Version="6.1.0" />
@@ -37,21 +41,6 @@
     <Reference Include="System.Transactions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Runtime.Caching" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <Content Include="bin\Release\netstandard2.0\Learning.EventStore.Common.dll">
-      <PackagePath>lib\netstandard2.0\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
-    <Content Include="bin\Release\net452\Learning.EventStore.Common.dll">
-      <PackagePath>lib\net452\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
-    <Content Include="bin\Release\net46\Learning.EventStore.Common.dll">
-      <PackagePath>lib\net46\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
