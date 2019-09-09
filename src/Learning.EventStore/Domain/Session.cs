@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Learning.EventStore.Common;
 using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Domain.Exceptions;
+using Learning.EventStore.Logging;
 using RedLockNet;
 
 namespace Learning.EventStore.Domain
@@ -17,6 +18,7 @@ namespace Learning.EventStore.Domain
         private readonly List<IRedLock> _distributedLocks = new List<IRedLock>();
         private readonly DistributedLockSettings _distributedLockSettings;
         private readonly bool _sessionLockEnabled;
+        private readonly ILog _logger;
 
         public Session(IRepository repository)
             : this(repository, null, false, null)
@@ -33,6 +35,7 @@ namespace Learning.EventStore.Domain
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
             _sessionLockEnabled = sessionLockEnabled;
+            _logger = LogProvider.GetCurrentClassLogger();
 
             if(sessionLockEnabled)
             {
@@ -150,6 +153,7 @@ namespace Learning.EventStore.Domain
         {
             if (_sessionLockEnabled)
             {
+                _logger.Debug($"Session lock enabled. Attempting to get lock for Aggregate {aggregateId}...");
                 var existingLock = _distributedLocks.FirstOrDefault(x => x.Resource == aggregateId);
 
                 if  (existingLock != null)
@@ -172,6 +176,7 @@ namespace Learning.EventStore.Domain
 
                     if(distributedLock.IsAcquired)
                     {
+                        _logger.Debug($"Session lock acquired for aggregate {aggregateId}; LockId: {distributedLock.LockId};");
                         _distributedLocks.Add(distributedLock);
                     }
                     else
