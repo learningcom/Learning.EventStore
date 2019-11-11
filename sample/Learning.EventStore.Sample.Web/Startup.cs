@@ -5,16 +5,14 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Learning.Cqrs;
 using Learning.EventStore.Cache;
-using Learning.EventStore.Common;
 using Learning.EventStore.Common.Redis;
 using Learning.EventStore.DataStores;
 using Learning.EventStore.Domain;
-using Learning.EventStore.Sample.Web.Models.ReadModel.Queries;
 using Learning.MessageQueue;
 using Learning.MessageQueue.Messages;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,8 +49,6 @@ namespace Learning.EventStore.Sample.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
-
             // Add Cqrs services
             LoadQueryHandler(typeof(IQueryHandler<,>), services);
             LoadQueryHandler(typeof(IAsyncQueryHandler<,>), services);
@@ -84,6 +80,8 @@ namespace Learning.EventStore.Sample.Web
             // Register subscriptions
             var serviceProvider = services.BuildServiceProvider();
             LoadSubscriptionHandlers(serviceProvider);
+
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -91,7 +89,6 @@ namespace Learning.EventStore.Sample.Web
         {
             if (env.IsDevelopment())
             {
-                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
             }
             else
