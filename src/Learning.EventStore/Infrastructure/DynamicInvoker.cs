@@ -7,9 +7,9 @@ namespace Learning.EventStore.Infrastructure
 {
     internal static class DynamicInvoker
     {
-        private const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private const BindingFlags BindingFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
         private static volatile Dictionary<int, CompiledMethodInfo> _cachedMembers = new Dictionary<int, CompiledMethodInfo>();
-        private static readonly object _lockObj = new object();
+        private static readonly object LockObj = new object();
 
         internal static object Invoke<T>(this T obj, string methodname, params object[] args)
         {
@@ -17,7 +17,7 @@ namespace Learning.EventStore.Infrastructure
             var hash = Hash(type, methodname, args);
             var exists = _cachedMembers.TryGetValue(hash, out var method);
             if (exists) return method?.Invoke(obj, args);
-            lock (_lockObj)
+            lock (LockObj)
             {
                 //Recheck if exist inside lock in case another thread has added it.
                 exists = _cachedMembers.TryGetValue(hash, out method);
@@ -62,7 +62,7 @@ namespace Learning.EventStore.Infrastructure
         {
             while (true)
             {
-                var methods = type.GetMethods(bindingFlags).Where(m => m.Name == name).ToArray();
+                var methods = type.GetMethods(BindingFlags).Where(m => m.Name == name).ToArray();
                 var member = methods.FirstOrDefault(m => m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argtypes)) ??
                              methods.FirstOrDefault(m => m.GetParameters().Select(p => p.ParameterType).ToArray().Matches(argtypes));
 

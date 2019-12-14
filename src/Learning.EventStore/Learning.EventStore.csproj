@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyTitle>Learning.EventStore</AssemblyTitle>
     <VersionPrefix>10.2.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.EventStore</AssemblyName>
     <PackageId>Learning.EventStore</PackageId>
     <NetStandardImplicitPackageVersion>2.0.3</NetStandardImplicitPackageVersion>
@@ -31,13 +31,6 @@
     <PackageReference Include="StackExchange.Redis">
       <Version>2.0.601</Version>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <Reference Include="System" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Runtime.Caching" />
   </ItemGroup>
 
   <ItemGroup>

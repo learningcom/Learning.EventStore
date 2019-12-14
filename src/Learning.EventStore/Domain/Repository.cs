@@ -12,12 +12,7 @@ namespace Learning.EventStore.Domain
 
         public Repository(IEventStore eventStore)
         {
-            if (eventStore == null)
-            {
-                throw new ArgumentNullException(nameof(eventStore));
-            }
-
-            _eventStore = eventStore;
+            _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
         }
 
         public async Task SaveAsync<T>(T aggregate, int? expectedVersion = null) where T : AggregateRoot
