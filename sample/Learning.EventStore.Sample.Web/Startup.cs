@@ -57,7 +57,7 @@ namespace Learning.EventStore.Sample.Web
             services.AddScoped<IHub>(c => new Hub(c.GetService));
 
             // Configure Redis Connection
-            var redisConfigOptions = ConfigurationOptions.Parse("127.0.0.1:6379");
+            var redisConfigOptions = ConfigurationOptions.Parse("localhost:6379");
             redisConfigOptions.AbortOnConnectFail = false;
             services.AddSingleton(new Lazy<IConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(redisConfigOptions)));
 
@@ -77,11 +77,11 @@ namespace Learning.EventStore.Sample.Web
             services.AddSingleton<ICache, MemoryCache>();
             services.AddScoped<IRepository>(y => new Repository(y.GetService<IEventStore>()));
 
-            // Register subscriptions
+            //Register subscriptions
             var serviceProvider = services.BuildServiceProvider();
             LoadSubscriptionHandlers(serviceProvider);
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
