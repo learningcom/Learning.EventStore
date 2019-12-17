@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.EventStore</AssemblyTitle>
-    <VersionPrefix>11.0.0-alpha</VersionPrefix>
+    <VersionPrefix>11.0.0-alpha01</VersionPrefix>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.EventStore</AssemblyName>
     <PackageId>Learning.EventStore</PackageId>
@@ -10,6 +10,7 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,9 +36,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj">
-      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <IncludeAssets>Learning.EventStore.Common.dll</IncludeAssets>
     </ProjectReference>
     <ProjectReference Include="..\Learning.MessageQueue\Learning.MessageQueue.csproj" />
   </ItemGroup>
+
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+    </ItemGroup>
+  </Target>
 
 </Project>
