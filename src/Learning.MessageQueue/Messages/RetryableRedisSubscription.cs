@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Learning.MessageQueue.Logging;
 using Learning.MessageQueue.Repository;
-#if !NET46 && !NET452
-using Microsoft.Extensions.Logging;
-#endif
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
@@ -12,22 +10,7 @@ namespace Learning.MessageQueue.Messages
     public abstract class RetryableRedisSubscription<T> : RedisSubscription<T>, IRetryableSubscription where T: IMessage
     {
         private readonly IMessageQueueRepository _messageQueueRepository;
-
-#if !NET46 && !NET452
-        private readonly ILogger _logger;
-
-        protected RetryableRedisSubscription(IEventSubscriber subscriber, ILogger logger, IMessageQueueRepository messageQueueRepository)
-            : this(subscriber, logger, messageQueueRepository, false)
-        {
-        }
-
-        protected RetryableRedisSubscription(IEventSubscriber subscriber, ILogger logger, IMessageQueueRepository messageQueueRepository, bool useLock)
-            : base(subscriber, logger, useLock)
-        {
-            _logger = logger;
-            _messageQueueRepository = messageQueueRepository;
-        }
-#endif
+        private readonly ILog _logger;
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository)
             : this(subscriber, messageQueueRepository, false)
@@ -35,11 +18,11 @@ namespace Learning.MessageQueue.Messages
         }
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository, bool useLock)
-            :base(subscriber, useLock)
+            : base(subscriber, useLock)
         {
+            _logger = LogProvider.GetCurrentClassLogger();
             _messageQueueRepository = messageQueueRepository;
         }
-
         
         public virtual int TimeToLiveHours { get; set; } = 168;
 
@@ -56,7 +39,7 @@ namespace Learning.MessageQueue.Messages
 
             if (listLength > 0)
             {
-                LogInformation($"Beginning retry of {listLength} {typeof(T).Name} events");
+                _logger.Info($"Beginning retry of {listLength} {typeof(T).Name} events");
             }
 
             for (var i = 0; i < listLength; i++)
@@ -75,26 +58,26 @@ namespace Learning.MessageQueue.Messages
                 {
                     if (await ShouldRetry(@event, eventData).ConfigureAwait(false))
                     {
-                        LogInformation($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
+                        _logger.Info($"Beginning retry of processing for {eventType} event for Aggregate: {@event.Id}");
 
                         await RetryCallBackAsync(@event).ConfigureAwait(false);
                         await _messageQueueRepository.DeleteFromDeadLetterQueue<T>(eventData, @event).ConfigureAwait(false);
                         eventsProcessed++;
 
-                        LogInformation($"Completed retry of processing for {eventType} event for Aggregate: {@event.Id}");
+                        _logger.Info($"Completed retry of processing for {eventType} event for Aggregate: {@event.Id}");
                     }
                 }
                 catch (Exception e)
                 {
                     var message = $"{e.Message}{Environment.NewLine}{e.StackTrace}";
                     await _messageQueueRepository.UpdateRetryData(@event, message).ConfigureAwait(false);
-                    LogWarning($"Event processing retry failed for {eventType} with message: {e.Message}{Environment.NewLine}{e.StackTrace}");
+                    _logger.WarnException($"Event processing retry failed for {eventType} with message: {e.Message}{Environment.NewLine}{e.StackTrace}", e);
 
                     errors++;
                 }
             }
 
-            LogInformation($"Retry complete for {eventType}. Processed {eventsProcessed} events with {errors} errors.");
+            _logger.Info($"Retry complete for {eventType}. Processed {eventsProcessed} events with {errors} errors.");
         }
 
         protected virtual async Task RetryCallBackAsync(T message)
@@ -121,14 +104,14 @@ namespace Learning.MessageQueue.Messages
 
             if (!intervalPassed && retryData.RetryCount > 0)
             {
-                LogDebug($"Skipping retry for event with Aggregate Id {@event.Id}; Retry interval has not elapsed.");
+                _logger.Debug($"Skipping retry for event with Aggregate Id {@event.Id}; Retry interval has not elapsed.");
                 return false;
             }
 
             if (TimeToLiveHours != default(int) &&
                 DateTimeOffset.UtcNow > @event.TimeStamp.ToUniversalTime().AddHours(TimeToLiveHours))
             {
-                LogDebug($"Time to live of {TimeToLiveHours} hours exceeded for event with Aggregate Id {@event.Id}; Deleting from the dead letter queue.");
+                _logger.Debug($"Time to live of {TimeToLiveHours} hours exceeded for event with Aggregate Id {@event.Id}; Deleting from the dead letter queue.");
                 await _messageQueueRepository.DeleteFromDeadLetterQueue<T>(eventData, @event).ConfigureAwait(false);
                 return false;
             }

@@ -2,63 +2,51 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.EventStore</AssemblyTitle>
-    <VersionPrefix>10.2.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.0;net46;net452</TargetFrameworks>
+    <VersionPrefix>11.0.0</VersionPrefix>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.EventStore</AssemblyName>
     <PackageId>Learning.EventStore</PackageId>
-    <NetStandardImplicitPackageVersion>2.0.1</NetStandardImplicitPackageVersion>
+    <NetStandardImplicitPackageVersion>2.0.3</NetStandardImplicitPackageVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="Dapper" Version="1.50.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="Npgsql" Version="4.0.3" />
-    <PackageReference Include="Polly" Version="6.1.0" />
-    <PackageReference Include="RedLock.net.StrongName" Version="2.1.0" />
-    <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.1.2" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
+    <PackageReference Include="Dapper" Version="2.0.30" />
+    <PackageReference Include="LibLog" Version="5.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Npgsql" Version="4.1.2" />
+    <PackageReference Include="Polly" Version="7.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.0" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
-    <Reference Include="System" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Runtime.Caching" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
-    <Reference Include="System" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Runtime.Caching" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <Content Include="bin\Release\netstandard2.0\Learning.EventStore.Common.dll">
-      <PackagePath>lib\netstandard2.0\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
-    <Content Include="bin\Release\net452\Learning.EventStore.Common.dll">
-      <PackagePath>lib\net452\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
-    <Content Include="bin\Release\net46\Learning.EventStore.Common.dll">
-      <PackagePath>lib\net46\</PackagePath>
-      <Pack>true</Pack>
-    </Content>
+    <PackageReference Include="RedLock.net">
+      <Version>2.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="StackExchange.Redis">
+      <Version>2.0.601</Version>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Learning.EventStore.Common\Learning.EventStore.Common.csproj">
-      <PrivateAssets>all</PrivateAssets>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <IncludeAssets>Learning.EventStore.Common.dll</IncludeAssets>
     </ProjectReference>
     <ProjectReference Include="..\Learning.MessageQueue\Learning.MessageQueue.csproj" />
   </ItemGroup>
+
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
 
 </Project>

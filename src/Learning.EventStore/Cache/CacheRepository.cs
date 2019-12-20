@@ -57,8 +57,7 @@ namespace Learning.EventStore.Cache
                 T aggregate;
                 if (await _cache.IsTracked(aggregateId).ConfigureAwait(false))
                 {
-                    var cachedAggregate = await _cache.Get(aggregateId).ConfigureAwait(false);
-                    aggregate = (T)cachedAggregate;
+                    aggregate = (T) await _cache.Get(aggregateId).ConfigureAwait(false);;
                     var aggregateType = typeof(T).Name;
                     var events = await _eventStore.GetAsync(aggregateId, aggregateType, aggregate.Version).ConfigureAwait(false);
 

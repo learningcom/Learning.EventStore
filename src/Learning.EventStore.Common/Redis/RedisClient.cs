@@ -13,7 +13,7 @@ namespace Learning.EventStore.Common.Redis
         private ISubscriber Subscriber => _redis.Value.GetSubscriber();
         private readonly int _retryCount;
 
-        private Policy RetryPolicyAsync =>
+        private IAsyncPolicy RetryPolicyAsync =>
             Policy
                 .Handle<Exception>()
                 .WaitAndRetryAsync(

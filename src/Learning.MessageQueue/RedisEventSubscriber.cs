@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
 using Learning.EventStore.Common;
 using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Common.Redis;
+using Learning.MessageQueue.Logging;
 using Learning.MessageQueue.Messages;
 using Learning.MessageQueue.Repository;
-#if !NET46 && !NET452
-using Microsoft.Extensions.Logging;
-#endif
 using Newtonsoft.Json;
 using RedLockNet;
 using StackExchange.Redis;
@@ -23,12 +20,10 @@ namespace Learning.MessageQueue
         private readonly string _environment;
         private readonly IDistributedLockFactory _distributedLockFactory;
         private readonly DistributedLockSettings _lockSettings;
+        private readonly ILog _logger;
 
-#if !NET46 && !NET452
-        private readonly ILogger _logger;
-
-        public RedisEventSubscriber(IRedisClient redisClient, string applicationName, string environment, ILoggerFactory loggerFactory)
-            : this(redisClient, applicationName, environment, loggerFactory, null)
+        public RedisEventSubscriber(IRedisClient redis, string applicationName, string environment)
+            : this(redis, applicationName, environment, null)
         {
         }
 
@@ -36,7 +31,6 @@ namespace Learning.MessageQueue
             IRedisClient redisClient,
             string applicationName, 
             string environment, 
-            ILoggerFactory loggerFactory, 
             IDistributedLockFactory distributedLockFactory, 
             DistributedLockSettings lockSettings = null)
         {
@@ -45,27 +39,7 @@ namespace Learning.MessageQueue
             _applicationName = applicationName;
             _environment = environment;
             _distributedLockFactory = distributedLockFactory;
-            _logger = loggerFactory.CreateLogger(GetType().Name);
-            _lockSettings = lockSettings ?? new DistributedLockSettings();
-        }
-#endif
-        public RedisEventSubscriber(IRedisClient redis, string applicationName, string environment)
-            : this(redis, applicationName, environment, null as IDistributedLockFactory)
-        {
-        }
-
-        public RedisEventSubscriber(
-            IRedisClient redis, 
-            string applicationName, 
-            string environment, 
-            IDistributedLockFactory distributedLockFactory, 
-            DistributedLockSettings lockSettings = null)
-        {
-            _redisClient = redis;
-            _messageQueueRepository = new MessageQueueRepository(_redisClient, environment, applicationName);
-            _applicationName = applicationName;
-            _environment = environment;
-            _distributedLockFactory = distributedLockFactory;
+            _logger = LogProvider.GetCurrentClassLogger();
             _lockSettings = lockSettings ?? new DistributedLockSettings();
         }
 
@@ -95,6 +69,7 @@ namespace Learning.MessageQueue
                 {
                     if (enableLock)
                     {
+                        _logger.Debug($"Distributed lock enabled. Attempting to get lock for message with ID {eventKey}...");
                         using(var distributedLock = _distributedLockFactory.CreateLock(
                             eventKey,
                             TimeSpan.FromSeconds(_lockSettings.ExpirySeconds),
@@ -103,6 +78,7 @@ namespace Learning.MessageQueue
                         {
                             if (distributedLock.IsAcquired)
                             {
+                                _logger.Debug($"Distributed lock acquired for message with ID {eventKey}; LockId: {distributedLock.LockId};");
                                 ExecuteCallback(callBack);
                             }
                             else
@@ -118,9 +94,7 @@ namespace Learning.MessageQueue
                 }
                 catch (Exception e)
                 {
-#if !NET46 && !NET452
-                    _logger?.LogError($"{e.Message}\n{e.StackTrace}", e);
-#endif
+                    _logger.ErrorException($"{e.Message}\n{e.StackTrace}", e);
                     throw;
                 }
             }
@@ -139,9 +113,7 @@ namespace Learning.MessageQueue
                 }
                 catch (Exception e)
                 {
-#if !NET46 && !NET452
-                    _logger.LogError(e, e.Message);
-#endif
+                    _logger.ErrorException(e.Message, e);
                 }
             }
         }

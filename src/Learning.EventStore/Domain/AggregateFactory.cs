@@ -9,11 +9,7 @@ namespace Learning.EventStore.Domain
         {
             try
             {
-#if NETSTANDARD1_3
-                return (T)Activator.CreateInstance(typeof(T));
-#else
                 return (T)Activator.CreateInstance(typeof(T), true);
-#endif
             }
             catch (MissingMethodException)
             {
