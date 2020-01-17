@@ -10,7 +10,7 @@ namespace Learning.EventStore.Common.Redis
         private readonly Lazy<IConnectionMultiplexer> _redis;
 
         public IDatabase Database => _redis.Value.GetDatabase();
-        private ISubscriber Subscriber => _redis.Value.GetSubscriber();
+
         private readonly int _retryCount;
 
         private IAsyncPolicy RetryPolicyAsync =>
@@ -108,12 +108,12 @@ namespace Learning.EventStore.Common.Redis
 
         public async Task PublishAsync(RedisChannel channel, RedisValue value)
         {
-            await RetryPolicyAsync.ExecuteAsync(() => Subscriber.PublishAsync(channel, value)).ConfigureAwait(false);
+            await RetryPolicyAsync.ExecuteAsync(() => _redis.Value.GetSubscriber().PublishAsync(channel, value)).ConfigureAwait(false);
         }
 
         public async Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler)
         {
-            await RetryPolicyAsync.ExecuteAsync(() => Subscriber.SubscribeAsync(channel, handler)).ConfigureAwait(false);
+            await RetryPolicyAsync.ExecuteAsync(() => _redis.Value.GetSubscriber().SubscribeAsync(channel, handler)).ConfigureAwait(false);
         }
 
         public async Task<string> StringGetAsync(string key)
