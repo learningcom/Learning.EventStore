@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.EventStore</AssemblyTitle>
-    <VersionPrefix>11.0.1</VersionPrefix>
+    <VersionPrefix>11.0.2</VersionPrefix>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.EventStore</AssemblyName>
     <PackageId>Learning.EventStore</PackageId>

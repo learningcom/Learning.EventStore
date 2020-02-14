@@ -7,9 +7,9 @@ namespace Learning.EventStore.Common.Redis
 {
     public class RedisClient : IRedisClient, IDisposable
     {
-        private readonly Lazy<IConnectionMultiplexer> _redis;
+        private readonly IConnectionMultiplexer _redisConnection;
 
-        public IDatabase Database => _redis.Value.GetDatabase();
+        public IDatabase Database => _redisConnection.GetDatabase();
 
         private readonly int _retryCount;
 
@@ -29,14 +29,33 @@ namespace Learning.EventStore.Common.Redis
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // exponential backoff
                 );
 
-        public RedisClient(Lazy<IConnectionMultiplexer> redis)
-            : this(redis, 3)
+        /// <summary>
+        /// DEPRECATED: Use the constructor that takes a non-lazy loaded IConnectionMultiplexer
+        /// </summary>
+        /// <param name="redisConnection"></param>
+        public RedisClient(Lazy<IConnectionMultiplexer> redisConnection)
+            : this(redisConnection, 3)
         {
         }
 
-        public RedisClient(Lazy<IConnectionMultiplexer> redis, int retryCount)
+        /// <summary>
+        /// DEPRECATED: Use the constructor that takes a non-lazy loaded IConnectionMultiplexer
+        /// </summary>
+        /// <param name="redisConnection"></param>
+        /// <param name="retryCount"></param>
+        public RedisClient(Lazy<IConnectionMultiplexer> redisConnection, int retryCount)
+            : this(redisConnection.Value, retryCount)
         {
-            _redis = redis;
+        }
+
+        public RedisClient(IConnectionMultiplexer redisConnectionConnection)
+            : this(redisConnectionConnection, 3)
+        {
+        }
+
+        public RedisClient(IConnectionMultiplexer redisConnectionConnection, int retryCount)
+        {
+            _redisConnection = redisConnectionConnection;
             _retryCount = retryCount;
         }
 
@@ -108,12 +127,12 @@ namespace Learning.EventStore.Common.Redis
 
         public async Task PublishAsync(RedisChannel channel, RedisValue value)
         {
-            await RetryPolicyAsync.ExecuteAsync(() => _redis.Value.GetSubscriber().PublishAsync(channel, value)).ConfigureAwait(false);
+            await RetryPolicyAsync.ExecuteAsync(() => _redisConnection.GetSubscriber().PublishAsync(channel, value)).ConfigureAwait(false);
         }
 
         public async Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler)
         {
-            await RetryPolicyAsync.ExecuteAsync(() => _redis.Value.GetSubscriber().SubscribeAsync(channel, handler)).ConfigureAwait(false);
+            await RetryPolicyAsync.ExecuteAsync(() => _redisConnection.GetSubscriber().SubscribeAsync(channel, handler)).ConfigureAwait(false);
         }
 
         public async Task<string> StringGetAsync(string key)
@@ -218,7 +237,7 @@ namespace Learning.EventStore.Common.Redis
 
         public void Dispose()
         {
-            _redis.Value.Dispose();
+            _redisConnection.Dispose();
         }
     }
 }

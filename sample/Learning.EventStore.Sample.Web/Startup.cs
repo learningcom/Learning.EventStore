@@ -59,7 +59,7 @@ namespace Learning.EventStore.Sample.Web
             // Configure Redis Connection
             var redisConfigOptions = ConfigurationOptions.Parse("localhost:6379");
             redisConfigOptions.AbortOnConnectFail = false;
-            services.AddSingleton(new Lazy<IConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(redisConfigOptions)));
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfigOptions));
 
             // Set up EventStore
             var keyPrefix = "Learning.EventStore.Sample.Web";
@@ -69,7 +69,7 @@ namespace Learning.EventStore.Sample.Web
                 ApplicationName = keyPrefix,
                 EnableCompression = false
             };
-            services.AddSingleton<IRedisClient>(y => new RedisClient(y.GetService<Lazy<IConnectionMultiplexer>>()));
+            services.AddSingleton<IRedisClient>(y => new RedisClient(y.GetService<IConnectionMultiplexer>()));
             services.AddSingleton<IEventSubscriber>(y => new RedisEventSubscriber(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName));
             services.AddScoped<ISession, Session>();
             services.AddSingleton<IMessageQueue>(y => new RedisMessageQueue(y.GetService<IRedisClient>(), keyPrefix, y.GetService<IHostingEnvironment>().EnvironmentName));

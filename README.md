@@ -40,7 +40,7 @@ In your startup.cs file add the following in the ConfigureServices method replac
 // Configure Redis connection
 var redisConfigOptions = ConfigurationOptions.Parse("127.0.0.1:6379");
 redisConfigOptions.AbortOnConnectFail = false;
-services.AddSingleton(new Lazy<IConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(redisConfigOptions)));
+services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfigOptions));
 ```
 \* **For production environments it is recommended that you turn on [persistence features](https://redis.io/topics/persistence) in Redis to preserve your message queues in the event that Redis crashes or is restarted.**
 
