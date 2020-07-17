@@ -50,6 +50,11 @@ namespace Learning.MessageQueue
 
         public async Task SubscribeAsync<T>(Action<T> callBack, bool enableLock) where T : IMessage
         {
+            await SubscribeAsync(callBack, enableLock, false);
+        }
+
+        public async Task SubscribeAsync<T>(Action<T> callBack, bool enableLock, bool sequentialProcessing) where T : IMessage
+        {
             if (enableLock && _distributedLockFactory == null)
             {
                 throw new ArgumentNullException(nameof(_distributedLockFactory), "IDistributedLockFactory must be set in constructor if lock is enabled");
@@ -62,45 +67,40 @@ namespace Learning.MessageQueue
             var publishedListKey = $"{_applicationName}:{{{eventKey}}}:PublishedEvents";
             await _redisClient.SetAddAsync(subscriberSetKey, _applicationName).ConfigureAwait(false);
 
-            //Create subscription callback
-            void RedisCallback(RedisChannel channel, RedisValue data)
+            //Create concurrent subscription callback
+            void ConcurrentRedisCallback(RedisChannel channel, RedisValue data)
             {
-                try
+                if (enableLock)
                 {
-                    if (enableLock)
-                    {
-                        _logger.Debug($"Distributed lock enabled. Attempting to get lock for message with ID {eventKey}...");
-                        using(var distributedLock = _distributedLockFactory.CreateLock(
-                            eventKey,
-                            TimeSpan.FromSeconds(_lockSettings.ExpirySeconds),
-                            TimeSpan.FromSeconds(_lockSettings.WaitSeconds),
-                            TimeSpan.FromMilliseconds(_lockSettings.RetryMilliseconds)))
-                        {
-                            if (distributedLock.IsAcquired)
-                            {
-                                _logger.Debug($"Distributed lock acquired for message with ID {eventKey}; LockId: {distributedLock.LockId};");
-                                ExecuteCallback(callBack);
-                            }
-                            else
-                            {
-                                throw new DistributedLockException(distributedLock, _lockSettings);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ExecuteCallback(callBack);
-                    }
+                    ExecuteCallbackWithLock(callBack, eventKey);
                 }
-                catch (Exception e)
+                else
                 {
-                    _logger.ErrorException($"{e.Message}\n{e.StackTrace}", e);
-                    throw;
+                    ExecuteCallback(callBack);
                 }
             }
 
-            //Subscribe to the event
-            await _redisClient.SubscribeAsync(eventKey, RedisCallback).ConfigureAwait(false);
+            //Create sequential subscription callback
+            void SequentialRedisCallback(ChannelMessage message)
+            {
+                if (enableLock)
+                {
+                    ExecuteCallbackWithLock(callBack, eventKey);
+                }
+                else
+                {
+                    ExecuteCallback(callBack);
+                }
+            }
+
+            if (sequentialProcessing)
+            {
+                _redisClient.Subscribe(eventKey, SequentialRedisCallback);
+            }
+            else
+            {
+                await _redisClient.SubscribeAsync(eventKey, ConcurrentRedisCallback).ConfigureAwait(false);
+            }
 
             //Grab any unprocessed events and process them
             //Ensures that events that were fired before the application was started will be picked up
@@ -109,7 +109,7 @@ namespace Learning.MessageQueue
             {
                 try
                 {
-                    await Task.Run(() => RedisCallback(eventKey, true)).ConfigureAwait(false);
+                    await Task.Run(() => ConcurrentRedisCallback(eventKey, true)).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -117,6 +117,36 @@ namespace Learning.MessageQueue
                 }
             }
         }
+
+        private void ExecuteCallbackWithLock<T>(Action<T> callBack, string eventKey) where T : IMessage
+        {
+            try
+            {
+                _logger.Debug($"Distributed lock enabled. Attempting to get lock for message with ID {eventKey}...");
+                using(var distributedLock = _distributedLockFactory.CreateLock(
+                    eventKey,
+                    TimeSpan.FromSeconds(_lockSettings.ExpirySeconds),
+                    TimeSpan.FromSeconds(_lockSettings.WaitSeconds),
+                    TimeSpan.FromMilliseconds(_lockSettings.RetryMilliseconds)))
+                {
+                    if (distributedLock.IsAcquired)
+                    {
+                        _logger.Debug($"Distributed lock acquired for message with ID {eventKey}; LockId: {distributedLock.LockId};");
+                        ExecuteCallback(callBack);
+                    }
+                    else
+                    {
+                        throw new DistributedLockException(distributedLock, _lockSettings);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.ErrorException($"{e.Message}\n{e.StackTrace}", e);
+                throw;
+            }
+        } 
+        
 
         private void ExecuteCallback<T>(Action<T> callBack) where T : IMessage
         {
@@ -146,6 +176,7 @@ namespace Learning.MessageQueue
             catch (Exception e)
             {
                 _messageQueueRepository.AddToDeadLetterQueue<T>(eventData, message, e);
+                _logger.ErrorException($"{e.Message}\n{e.StackTrace}", e);
 
                 throw;
             }
