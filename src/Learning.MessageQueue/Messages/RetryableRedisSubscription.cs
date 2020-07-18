@@ -13,12 +13,17 @@ namespace Learning.MessageQueue.Messages
         private readonly ILog _logger;
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository)
-            : this(subscriber, messageQueueRepository, false)
+            : this(subscriber, messageQueueRepository, false, false)
         {
         }
 
         protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository, bool useLock)
-            : base(subscriber, useLock)
+            : this(subscriber, messageQueueRepository, useLock, false)
+        {
+        }
+
+        protected RetryableRedisSubscription(IEventSubscriber subscriber, IMessageQueueRepository messageQueueRepository, bool useLock, bool sequentialProcessing)
+            : base(subscriber, useLock, sequentialProcessing)
         {
             _logger = LogProvider.GetCurrentClassLogger();
             _messageQueueRepository = messageQueueRepository;
