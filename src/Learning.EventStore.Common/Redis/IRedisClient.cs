@@ -20,6 +20,7 @@ namespace Learning.EventStore.Common.Redis
         long ListRemove(RedisKey key, RedisValue value);
         Task PublishAsync(RedisChannel channel, RedisValue value);
         Task SubscribeAsync(RedisChannel channel, Action<RedisChannel, RedisValue> handler);
+        void Subscribe(RedisChannel channel, Action<ChannelMessage> handler);
         Task<string> StringGetAsync(string key);
         Task<bool> StringSetAsync(string key, string value, TimeSpan? expiry = null);
         Task<bool> KeyExistsAsync(string key);
