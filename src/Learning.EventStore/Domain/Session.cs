@@ -3,11 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Learning.EventStore.Common;
-using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Domain.Exceptions;
-using Learning.EventStore.Logging;
-using RedLockNet;
 
 namespace Learning.EventStore.Domain
 {
@@ -15,16 +11,12 @@ namespace Learning.EventStore.Domain
     {
         private readonly IRepository _repository;
         private readonly ConcurrentDictionary<string, AggregateDescriptor> _trackedAggregates;
-        private readonly ILog _logger;
-        private readonly object _commitLock = new object();
 
         public Session(IRepository repository)
         {
             _repository = repository;
             _trackedAggregates = new ConcurrentDictionary<string, AggregateDescriptor>();
-            _logger = LogProvider.GetCurrentClassLogger();
         }
-
 
         public void Add<T>(T aggregate) where T : AggregateRoot
         {
