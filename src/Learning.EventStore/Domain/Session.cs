@@ -1,28 +1,22 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Learning.EventStore.Common;
-using Learning.EventStore.Common.Exceptions;
 using Learning.EventStore.Domain.Exceptions;
-using Learning.EventStore.Logging;
-using RedLockNet;
 
 namespace Learning.EventStore.Domain
 {
     public class Session : ISession
     {
         private readonly IRepository _repository;
-        private readonly Dictionary<string, AggregateDescriptor> _trackedAggregates;
-        private readonly ILog _logger;
+        private readonly ConcurrentDictionary<string, AggregateDescriptor> _trackedAggregates;
 
         public Session(IRepository repository)
         {
             _repository = repository;
-            _trackedAggregates = new Dictionary<string, AggregateDescriptor>();
-            _logger = LogProvider.GetCurrentClassLogger();
+            _trackedAggregates = new ConcurrentDictionary<string, AggregateDescriptor>();
         }
-
 
         public void Add<T>(T aggregate) where T : AggregateRoot
         {
@@ -33,7 +27,7 @@ namespace Learning.EventStore.Domain
         {
             if (!IsTracked(aggregate.Id))
             {
-                _trackedAggregates.Add(aggregate.Id, new AggregateDescriptor { Aggregate = aggregate, Version = aggregate.Version });
+                _trackedAggregates.TryAdd(aggregate.Id, new AggregateDescriptor { Aggregate = aggregate, Version = aggregate.Version });
             }
             else if (_trackedAggregates[aggregate.Id].Aggregate != aggregate)
             {
@@ -76,13 +70,25 @@ namespace Learning.EventStore.Domain
         {
             try
             {
-                var tasks = new Task[_trackedAggregates.Count];
-                var i = 0;
-                foreach (var descriptor in _trackedAggregates.Values)
+                var tasks = new List<Task>();
+
+                while (_trackedAggregates.Count > 0)
                 {
-                    tasks[i] = _repository.SaveAsync(descriptor.Aggregate, descriptor.Version);
-                    i++;
+                    AggregateDescriptor descriptor = null;
+
+                    var key = _trackedAggregates.Keys.FirstOrDefault();
+
+                    if (key != null)
+                    {
+                        _trackedAggregates.TryRemove(key, out descriptor);
+                    }
+
+                    if (descriptor != null)
+                    {
+                        tasks.Add(_repository.SaveAsync(descriptor.Aggregate, descriptor.Version));
+                    }
                 }
+
                 await Task.WhenAll(tasks).ConfigureAwait(false);
             }
             finally
