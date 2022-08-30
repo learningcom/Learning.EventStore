@@ -9,5 +9,9 @@ namespace Learning.MessageQueue
         Task SubscribeAsync<T>(Action<T> callBack) where T : IMessage;
         Task SubscribeAsync<T>(Action<T> callBack, bool enableLock) where T : IMessage;
         Task SubscribeAsync<T>(Action<T> callBack, bool enableLock, bool sequentialProcessing) where T : IMessage;
+
+        Task SubscribeAsync<T>(Func<T, Task> callBack) where T : IMessage;
+        Task SubscribeAsync<T>(Func<T, Task> callBack, bool enableLock) where T : IMessage;
+        Task SubscribeAsync<T>(Func<T, Task> callBack, bool enableLock, bool sequentialProcessing) where T : IMessage;
     }
 }
