@@ -28,6 +28,11 @@ namespace Learning.MessageQueue
         {
         }
 
+        public RedisEventSubscriber(IRedisClient redis, ISubscriber sub, string applicationName, string environment)
+            : this(redis, sub, applicationName, environment, null)
+        {
+        }
+
         public RedisEventSubscriber(
             IRedisClient redisClient,
             string applicationName, 
