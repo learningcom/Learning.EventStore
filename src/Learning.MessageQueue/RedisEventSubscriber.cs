@@ -16,6 +16,7 @@ namespace Learning.MessageQueue
     {
         private readonly IMessageQueueRepository _messageQueueRepository;
         private readonly IRedisClient _redisClient;
+        private readonly ISubscriber _sub;
         private readonly string _applicationName;
         private readonly string _environment;
         private readonly IDistributedLockFactory _distributedLockFactory;
@@ -33,8 +34,20 @@ namespace Learning.MessageQueue
             string environment, 
             IDistributedLockFactory distributedLockFactory, 
             DistributedLockSettings lockSettings = null)
+            : this(redisClient, null, applicationName, environment, distributedLockFactory, lockSettings)
+        {
+        }
+
+        public RedisEventSubscriber(
+            IRedisClient redisClient,
+            ISubscriber sub,
+            string applicationName,
+            string environment,
+            IDistributedLockFactory distributedLockFactory,
+            DistributedLockSettings lockSettings = null)
         {
             _redisClient = redisClient;
+            _sub = sub;
             _messageQueueRepository = new MessageQueueRepository(_redisClient, environment, applicationName);
             _applicationName = applicationName;
             _environment = environment;
@@ -211,7 +224,7 @@ namespace Learning.MessageQueue
             await _redisClient.SetAddAsync(subscriberSetKey, _applicationName).ConfigureAwait(false);
 
             //Create concurrent subscription callback
-            async void ConcurrentRedisCallback(RedisChannel channel, RedisValue data)
+            async Task ConcurrentRedisCallback()
             {
                 if (enableLock)
                 {
@@ -223,8 +236,9 @@ namespace Learning.MessageQueue
                 }
             }
 
+            // TODO: These are identical. Does sequential/concurrent make sense an ISubscriber?
             //Create sequential subscription callback
-            async void SequentialRedisCallback(ChannelMessage message)
+            async Task SequentialRedisCallback()
             {
                 if (enableLock)
                 {
@@ -238,11 +252,26 @@ namespace Learning.MessageQueue
 
             if (sequentialProcessing)
             {
-                _redisClient.Subscribe(eventKey, SequentialRedisCallback);
+                if (_sub != null)
+                {
+                    _sub.Subscribe(eventKey).OnMessage(async message => await SequentialRedisCallback().ConfigureAwait(false));
+                }
+                else
+                {
+                    _redisClient.Subscribe(eventKey, async message => await SequentialRedisCallback().ConfigureAwait(false));
+                }
             }
             else
             {
-                await _redisClient.SubscribeAsync(eventKey, ConcurrentRedisCallback).ConfigureAwait(false);
+                if (_sub != null)
+                {
+                    _sub.Subscribe(eventKey).OnMessage(async message => await ConcurrentRedisCallback().ConfigureAwait(false));
+                }
+                else
+                {
+                    await _redisClient.SubscribeAsync(eventKey, async (channel, data) => await ConcurrentRedisCallback().ConfigureAwait(false))
+                        .ConfigureAwait(false);
+                }
             }
 
             //Grab any unprocessed events and process them
@@ -252,7 +281,7 @@ namespace Learning.MessageQueue
             {
                 try
                 {
-                    await Task.Run(() => ConcurrentRedisCallback(eventKey, true)).ConfigureAwait(false);
+                    await Task.Run(async () => await ConcurrentRedisCallback().ConfigureAwait(false)).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
