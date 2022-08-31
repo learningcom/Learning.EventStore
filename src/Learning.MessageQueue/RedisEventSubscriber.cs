@@ -284,7 +284,7 @@ namespace Learning.MessageQueue
             {
                 try
                 {
-                    await Task.Run(async () => await ConcurrentRedisCallback().ConfigureAwait(false)).ConfigureAwait(false);
+                    await Task.Run(async () => await TaskRedisCallback().ConfigureAwait(false)).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
