@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using FakeItEasy;
 using Learning.EventStore.Common.Redis;
 using Learning.EventStore.Test.Mocks;
@@ -50,6 +51,43 @@ namespace Learning.EventStore.Test.RedisEventSubscriber
                 A.CallTo(() => transaction.ListLeftPushAsync("TestPrefix:{Test:TestEvent}:DeadLetters", serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened();
                 A.CallTo(() => redis.ListRemove("TestPrefix:{Test:TestEvent}:ProcessingEvents", serializedEvent)).MustHaveHappened();
             }
+        }
+
+        [TestMethod]
+        public async Task MovesToDeadLetterQueueAsync()
+        {
+            var redis = A.Fake<IRedisClient>();
+            var subscriber = new MessageQueue.RedisEventSubscriber(redis, "TestPrefix", "Test");
+            var eventData = new TestEvent();
+            var serializedEvent = JsonConvert.SerializeObject(eventData);
+            var transaction = A.Fake<ITransaction>();
+            TestEvent callbackData = null;
+
+            A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).Returns(serializedEvent);
+            A.CallTo(() => redis.SubscribeAsync("Test:TestEvent", A<Action<RedisChannel, RedisValue>>._))
+                .Invokes(callObject =>
+                {
+                    var action = callObject.Arguments[1] as Action<RedisChannel, RedisValue>;
+                    action(callObject.Arguments[0].ToString(), serializedEvent);
+                });
+            A.CallTo(() => redis.CreateTransaction()).Returns(transaction);
+            A.CallTo(() => redis.ExecuteTransactionAsync(transaction)).Returns(true);
+
+
+            Func<TestEvent, Task> cb = async (data) =>
+            {
+                await Task.Delay(20);
+                callbackData = data;
+                throw new Exception("Oh No!");
+            };
+
+            await subscriber.SubscribeAsync(cb);
+
+            await Task.Delay(100); // redis.SubscribeAsync does not wait for the async callback
+
+            A.CallTo(() => redis.ListRightPopLeftPush("TestPrefix:{Test:TestEvent}:PublishedEvents", "TestPrefix:{Test:TestEvent}:ProcessingEvents")).MustHaveHappened();
+            A.CallTo(() => transaction.ListLeftPushAsync("TestPrefix:{Test:TestEvent}:DeadLetters", serializedEvent, When.Always, CommandFlags.None)).MustHaveHappened();
+            A.CallTo(() => redis.ListRemoveAsync("TestPrefix:{Test:TestEvent}:ProcessingEvents", serializedEvent)).MustHaveHappened();
         }
     }
 }
