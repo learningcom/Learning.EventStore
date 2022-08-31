@@ -228,8 +228,8 @@ namespace Learning.MessageQueue
             var publishedListKey = $"{_applicationName}:{{{eventKey}}}:PublishedEvents";
             await _redisClient.SetAddAsync(subscriberSetKey, _applicationName).ConfigureAwait(false);
 
-            //Create concurrent subscription callback
-            async Task ConcurrentRedisCallback()
+            // Create async Task subscription callback
+            async Task TaskRedisCallback()
             {
                 if (enableLock)
                 {
@@ -241,9 +241,8 @@ namespace Learning.MessageQueue
                 }
             }
 
-            // TODO: These are identical. Does sequential/concurrent make sense an ISubscriber?
-            //Create sequential subscription callback
-            async Task SequentialRedisCallback()
+            // Create async void subscription callback
+            async void VoidRedisCallback()
             {
                 if (enableLock)
                 {
@@ -259,23 +258,22 @@ namespace Learning.MessageQueue
             {
                 if (_sub != null)
                 {
-                    _sub.Subscribe(eventKey).OnMessage(async message => await SequentialRedisCallback().ConfigureAwait(false));
+                    _sub.Subscribe(eventKey).OnMessage(message => TaskRedisCallback());
                 }
                 else
                 {
-                    _redisClient.Subscribe(eventKey, async message => await SequentialRedisCallback().ConfigureAwait(false));
+                    _redisClient.Subscribe(eventKey, message => VoidRedisCallback());
                 }
             }
             else
             {
                 if (_sub != null)
                 {
-                    _sub.Subscribe(eventKey).OnMessage(async message => await ConcurrentRedisCallback().ConfigureAwait(false));
+                    (await _sub.SubscribeAsync(eventKey).ConfigureAwait(false)).OnMessage(message => TaskRedisCallback());
                 }
                 else
                 {
-                    await _redisClient.SubscribeAsync(eventKey, async (channel, data) => await ConcurrentRedisCallback().ConfigureAwait(false))
-                        .ConfigureAwait(false);
+                    await _redisClient.SubscribeAsync(eventKey, (channel, data) => VoidRedisCallback()).ConfigureAwait(false);
                 }
             }
 
