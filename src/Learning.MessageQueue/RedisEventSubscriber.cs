@@ -16,7 +16,6 @@ namespace Learning.MessageQueue
     {
         private readonly IMessageQueueRepository _messageQueueRepository;
         private readonly IRedisClient _redisClient;
-        private readonly ISubscriber _sub;
         private readonly string _applicationName;
         private readonly string _environment;
         private readonly IDistributedLockFactory _distributedLockFactory;
@@ -28,31 +27,14 @@ namespace Learning.MessageQueue
         {
         }
 
-        public RedisEventSubscriber(IRedisClient redis, ISubscriber sub, string applicationName, string environment)
-            : this(redis, sub, applicationName, environment, null)
-        {
-        }
-
         public RedisEventSubscriber(
             IRedisClient redisClient,
             string applicationName, 
             string environment, 
             IDistributedLockFactory distributedLockFactory, 
             DistributedLockSettings lockSettings = null)
-            : this(redisClient, null, applicationName, environment, distributedLockFactory, lockSettings)
-        {
-        }
-
-        public RedisEventSubscriber(
-            IRedisClient redisClient,
-            ISubscriber sub,
-            string applicationName,
-            string environment,
-            IDistributedLockFactory distributedLockFactory,
-            DistributedLockSettings lockSettings = null)
         {
             _redisClient = redisClient;
-            _sub = sub;
             _messageQueueRepository = new MessageQueueRepository(_redisClient, environment, applicationName);
             _applicationName = applicationName;
             _environment = environment;
@@ -256,25 +238,11 @@ namespace Learning.MessageQueue
 
             if (sequentialProcessing)
             {
-                if (_sub != null)
-                {
-                    _sub.Subscribe(eventKey).OnMessage(message => TaskRedisCallback());
-                }
-                else
-                {
-                    _redisClient.Subscribe(eventKey, message => VoidRedisCallback());
-                }
+                _redisClient.Subscribe(eventKey, message => TaskRedisCallback());
             }
             else
             {
-                if (_sub != null)
-                {
-                    (await _sub.SubscribeAsync(eventKey).ConfigureAwait(false)).OnMessage(message => TaskRedisCallback());
-                }
-                else
-                {
-                    await _redisClient.SubscribeAsync(eventKey, (channel, data) => VoidRedisCallback()).ConfigureAwait(false);
-                }
+                await _redisClient.SubscribeAsync(eventKey, (channel, data) => VoidRedisCallback()).ConfigureAwait(false);
             }
 
             //Grab any unprocessed events and process them
