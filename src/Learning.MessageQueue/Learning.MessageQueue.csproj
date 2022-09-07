@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.MessageQueue</AssemblyTitle>
-    <VersionPrefix>4.2.0-rc1</VersionPrefix>
+    <VersionPrefix>4.2.0</VersionPrefix>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.MessageQueue</AssemblyName>
     <PackageId>Learning.MessageQueue</PackageId>
