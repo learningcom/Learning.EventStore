@@ -140,6 +140,11 @@ namespace Learning.EventStore.Common.Redis
             RetryPolicy.Execute(() => _redisConnection.GetSubscriber().Subscribe(channel).OnMessage(handler));
         }
 
+        public void Subscribe(RedisChannel channel, Func<ChannelMessage, Task> handler)
+        {
+            RetryPolicy.Execute(() => _redisConnection.GetSubscriber().Subscribe(channel).OnMessage(handler));
+        }
+
         public async Task<string> StringGetAsync(string key)
         {
             var result = await RetryPolicyAsync.ExecuteAsync(() => Database.StringGetAsync(key)).ConfigureAwait(false);
