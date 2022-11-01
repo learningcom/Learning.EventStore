@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Learning.MessageQueue</AssemblyTitle>
-    <VersionPrefix>4.2.0</VersionPrefix>
+    <VersionPrefix>4.2.1-rc1</VersionPrefix>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Learning.MessageQueue</AssemblyName>
     <PackageId>Learning.MessageQueue</PackageId>
@@ -21,10 +21,10 @@
     <PackageReference Include="Polly" Version="7.2.0" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
     <PackageReference Include="RedLock.net">
-      <Version>2.2.0</Version>
+      <Version>2.3.2</Version>
     </PackageReference>
     <PackageReference Include="StackExchange.Redis">
-      <Version>2.0.601</Version>
+      <Version>2.6.70</Version>
     </PackageReference>
   </ItemGroup>
 
@@ -37,7 +37,7 @@
   
   <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
     <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
     </ItemGroup>
   </Target>
 </Project>
