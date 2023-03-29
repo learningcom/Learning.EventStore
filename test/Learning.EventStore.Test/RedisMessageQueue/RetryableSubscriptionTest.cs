@@ -126,6 +126,24 @@ namespace Learning.EventStore.Test.RedisMessageQueue
 
             Assert.IsTrue(retryClass.CallBack1Called);
         }
+
+        [TestMethod]
+        public async Task ChecksForStaleProcessingEvents()
+        {
+            var logger = A.Fake<ILogger>();
+            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
+            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(3);
+            var message1 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(0) });
+            var message2 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "1", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(4) });
+            var message3 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "2", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(5) });
+            A.CallTo(() => eventStoreRepository.GetOldestProcessingEvents<TestAsyncMessage>(A<int>._)).Returns(new RedisValue[] { message1, message2, message3 });
+            var subscriber = A.Fake<IEventSubscriber>();
+            var retryClass = new TestAsyncRetryClass(subscriber, eventStoreRepository);
+
+            await retryClass.RetryAsync().ConfigureAwait(false);
+            A.CallTo(() => eventStoreRepository.MoveProcessingEventToDeadLetterQueue<TestAsyncMessage>(A<RedisValue>._, A<TestAsyncMessage>._))
+                .MustHaveHappened(Repeated.Exactly.Once);
+        }
     }
 
     public class TestRetryClass : RetryableRedisSubscription<TestMessage>
