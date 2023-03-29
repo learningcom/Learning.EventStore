@@ -35,8 +35,7 @@ namespace Learning.MessageQueue.Repository
             return listLength;
         }
 
-        // TODO: Rename to GetDeadLetterMessage
-        public async Task<RedisValue> GetUnprocessedMessage<T>(int index) where T : IMessage
+        public async Task<RedisValue> GetDeadLetterMessage<T>(int index) where T : IMessage
         {
             var deadLetterListKey = GetDeadLetterListKey<T>();
 

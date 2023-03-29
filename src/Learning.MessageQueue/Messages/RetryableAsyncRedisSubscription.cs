@@ -54,7 +54,7 @@ namespace Learning.MessageQueue.Messages
             for (var i = 0; i < listLength; i++)
             {
                 var indexToGet = i - eventsProcessed;
-                var eventData = await _messageQueueRepository.GetUnprocessedMessage<T>(indexToGet).ConfigureAwait(false);
+                var eventData = await _messageQueueRepository.GetDeadLetterMessage<T>(indexToGet).ConfigureAwait(false);
 
                 if (string.IsNullOrEmpty(eventData))
                 {

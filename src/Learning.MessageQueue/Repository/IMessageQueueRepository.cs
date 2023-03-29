@@ -10,8 +10,7 @@ namespace Learning.MessageQueue.Repository
     {
         Task<long> GetDeadLetterListLength<T>() where T : IMessage;
 
-        // TODO: Rename to GetDeadLetterMessage
-        Task<RedisValue> GetUnprocessedMessage<T>(int index) where T : IMessage;
+        Task<RedisValue> GetDeadLetterMessage<T>(int index) where T : IMessage;
 
         void AddToDeadLetterQueue<T>(RedisValue eventData, IMessage @event, Exception exception) where T : IMessage;
 
