@@ -131,7 +131,7 @@ namespace Learning.MessageQueue.Messages
             var waitTime = TimeSpan.FromMinutes(5);
             var staleTimeStamp = DateTimeOffset.UtcNow - waitTime;
 
-            var unprocessedEvents = await _messageQueueRepository.GetOldestProcessingEvents<T>(eventCount);
+            var unprocessedEvents = await _messageQueueRepository.GetOldestProcessingEvents<T>(eventCount).ConfigureAwait(false);
 
             for (var i = 0; i < unprocessedEvents.Length; i++)
             {
@@ -142,7 +142,7 @@ namespace Learning.MessageQueue.Messages
                 {
                     _logger.Info($"Moving {typeof(T).Name} {@event.Id} with timestamp @{@event.TimeStamp} to dead letter queue.");
 
-                    await _messageQueueRepository.MoveProcessingEventToDeadLetterQueue<T>(unprocessedEvent, @event);
+                    await _messageQueueRepository.MoveProcessingEventToDeadLetterQueue<T>(unprocessedEvent, @event).ConfigureAwait(false);
                 }
             }
         }
