@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Learning.EventStore.Common.Sql;
 using Learning.MessageQueue.Logging;
 using Learning.MessageQueue.Repository;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
