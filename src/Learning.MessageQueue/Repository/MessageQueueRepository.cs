@@ -100,23 +100,7 @@ namespace Learning.MessageQueue.Repository
         public async Task<RedisValue[]> GetOldestProcessingEvents<T>(int count) where T : IMessage
         {
             var processingEventsListKey = GetProcessingEventsListKey<T>();
-            var listLength = await _redisClient.ListLengthAsync(processingEventsListKey).ConfigureAwait(false);
-            long startIndex;
-            
-            if (listLength == 0)
-            {
-                return new RedisValue[0];
-            }
-            if (listLength > count)
-            {
-                startIndex = listLength - count;
-            }
-            else
-            {
-                startIndex = 0;
-            }
-
-            var unprocessedEvents = await _redisClient.ListRangeAsync(processingEventsListKey, startIndex, -1).ConfigureAwait(false);
+            var unprocessedEvents = await _redisClient.ListRangeAsync(processingEventsListKey, count * -1, -1).ConfigureAwait(false);
             return unprocessedEvents;
         }
 
@@ -126,10 +110,11 @@ namespace Learning.MessageQueue.Repository
             var processingEventsListKey = GetProcessingEventsListKey<T>();
             var tran = _redisClient.CreateTransaction();
 
-            tran.ListLeftPushAsync(deadLetterListKey, eventData);
-            tran.ListRemoveAsync(processingEventsListKey, eventData, -1);
+            var pushTask = tran.ListLeftPushAsync(deadLetterListKey, eventData);
+            var removeTask = tran.ListRemoveAsync(processingEventsListKey, eventData, -1);
 
             await ExcecuteTransaction(tran, @event.Id).ConfigureAwait(false);
+            await Task.WhenAll(pushTask, removeTask).ConfigureAwait(false);
         }
 
         private string GetDeadLetterListKey<T>() where T : IMessage
