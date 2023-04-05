@@ -37,6 +37,8 @@ namespace Learning.MessageQueue.Messages
 
         public virtual async Task RetryAsync()
         {
+            await MoveStaleProcessingEventsToDeadLetters();
+
             var eventType = typeof(T).Name;
             var listLength = await _messageQueueRepository.GetDeadLetterListLength<T>().ConfigureAwait(false);
             var eventsProcessed = 0;
@@ -50,7 +52,7 @@ namespace Learning.MessageQueue.Messages
             for (var i = 0; i < listLength; i++)
             {
                 var indexToGet = i - eventsProcessed;
-                var eventData = await _messageQueueRepository.GetUnprocessedMessage<T>(indexToGet).ConfigureAwait(false);
+                var eventData = await _messageQueueRepository.GetDeadLetterMessage<T>(indexToGet).ConfigureAwait(false);
 
                 if (string.IsNullOrEmpty(eventData))
                 {
@@ -122,6 +124,28 @@ namespace Learning.MessageQueue.Messages
             }
 
             return true;
+        }
+
+        private async Task MoveStaleProcessingEventsToDeadLetters()
+        {
+            const int eventCount = 10;
+            var waitTime = TimeSpan.FromMinutes(5);
+            var staleTimeStamp = DateTimeOffset.UtcNow - waitTime;
+
+            var unprocessedEvents = await _messageQueueRepository.GetOldestProcessingEvents<T>(eventCount);
+
+            for (var i = 0; i < unprocessedEvents.Length; i++)
+            {
+                var unprocessedEvent = unprocessedEvents[i];
+                var @event = JsonConvert.DeserializeObject<T>(unprocessedEvent);
+
+                if (@event.TimeStamp < staleTimeStamp)
+                {
+                    _logger.Info($"Moving {typeof(T).Name} {@event.Id} with timestamp @{@event.TimeStamp} to dead letter queue.");
+
+                    await _messageQueueRepository.MoveProcessingEventToDeadLetterQueue<T>(unprocessedEvent, @event);
+                }
+            }
         }
     }
 }

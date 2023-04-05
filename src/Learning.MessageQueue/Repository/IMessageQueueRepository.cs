@@ -10,7 +10,7 @@ namespace Learning.MessageQueue.Repository
     {
         Task<long> GetDeadLetterListLength<T>() where T : IMessage;
 
-        Task<RedisValue> GetUnprocessedMessage<T>(int index) where T : IMessage;
+        Task<RedisValue> GetDeadLetterMessage<T>(int index) where T : IMessage;
 
         void AddToDeadLetterQueue<T>(RedisValue eventData, IMessage @event, Exception exception) where T : IMessage;
 
@@ -19,5 +19,9 @@ namespace Learning.MessageQueue.Repository
         Task UpdateRetryData(IMessage @event, string exceptionMessage);
 
         Task<RetryData> GetRetryData(IMessage @event);
+
+        Task<RedisValue[]> GetOldestProcessingEvents<T>(int count) where T : IMessage;
+
+        Task MoveProcessingEventToDeadLetterQueue<T>(RedisValue eventData, IMessage @event) where T : IMessage;
     }
 }

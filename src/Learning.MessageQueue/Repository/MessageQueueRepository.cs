@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Learning.EventStore.Common.Redis;
+using Learning.EventStore.Common.Sql;
 using Learning.MessageQueue.Messages;
 using StackExchange.Redis;
 
@@ -33,7 +35,7 @@ namespace Learning.MessageQueue.Repository
             return listLength;
         }
 
-        public async Task<RedisValue> GetUnprocessedMessage<T>(int index) where T : IMessage
+        public async Task<RedisValue> GetDeadLetterMessage<T>(int index) where T : IMessage
         {
             var deadLetterListKey = GetDeadLetterListKey<T>();
 
@@ -95,11 +97,40 @@ namespace Learning.MessageQueue.Repository
             return data;
         }
 
+        public async Task<RedisValue[]> GetOldestProcessingEvents<T>(int count) where T : IMessage
+        {
+            var processingEventsListKey = GetProcessingEventsListKey<T>();
+            var unprocessedEvents = await _redisClient.ListRangeAsync(processingEventsListKey, count * -1, -1).ConfigureAwait(false);
+            return unprocessedEvents;
+        }
+
+        public async Task MoveProcessingEventToDeadLetterQueue<T>(RedisValue eventData, IMessage @event) where T : IMessage
+        {
+            var deadLetterListKey = GetDeadLetterListKey<T>();
+            var processingEventsListKey = GetProcessingEventsListKey<T>();
+            var tran = _redisClient.CreateTransaction();
+
+            var pushTask = tran.ListLeftPushAsync(deadLetterListKey, eventData);
+            var removeTask = tran.ListRemoveAsync(processingEventsListKey, eventData, -1);
+
+            await ExcecuteTransaction(tran, @event.Id).ConfigureAwait(false);
+            await Task.WhenAll(pushTask, removeTask).ConfigureAwait(false);
+        }
+
         private string GetDeadLetterListKey<T>() where T : IMessage
         {
             var eventType = typeof(T).Name;
             var eventKey = $"{_environment}:{eventType}";
             var processingListKey = $"{_applicationName}:{{{eventKey}}}:DeadLetters";
+
+            return processingListKey;
+        }
+
+        private string GetProcessingEventsListKey<T>() where T : IMessage
+        {
+            var eventType = typeof(T).Name;
+            var eventKey = $"{_environment}:{eventType}";
+            var processingListKey = $"{_applicationName}:{{{eventKey}}}:ProcessingEvents";
 
             return processingListKey;
         }
@@ -122,5 +153,6 @@ namespace Learning.MessageQueue.Repository
                 throw new Exception($"Redis transaction failed for AggregateId {aggregateId}");
             }
         }
+
     }
 }

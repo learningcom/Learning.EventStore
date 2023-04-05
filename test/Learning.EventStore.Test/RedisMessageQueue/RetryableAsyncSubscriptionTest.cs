@@ -23,7 +23,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var message1 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "0" });
             var message2 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "1" });
             var message3 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "2" });
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestAsyncMessage>(0)).ReturnsNextFromSequence(message1, message2, message3);
+            A.CallTo(() => eventStoreRepository.GetDeadLetterMessage<TestAsyncMessage>(0)).ReturnsNextFromSequence(message1, message2, message3);
             var retryData = new RetryData
             {
                 LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1)
@@ -47,7 +47,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(1);
             var message = new TestAsyncMessage { Id = "0" };
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            A.CallTo(() => eventStoreRepository.GetDeadLetterMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
             var retryData = new RetryData
             {
                 LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1)
@@ -68,7 +68,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(1);
             var message = new TestAsyncMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-1) };
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            A.CallTo(() => eventStoreRepository.GetDeadLetterMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
             var retryData = new RetryData
             {
                 LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
@@ -90,7 +90,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(1);
             var message = new TestAsyncMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-169) };
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            A.CallTo(() => eventStoreRepository.GetDeadLetterMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
             var retryData = new RetryData
             {
                 LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
@@ -112,7 +112,7 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             var eventStoreRepository = A.Fake<IMessageQueueRepository>();
             A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(1);
             var message = new TestAsyncMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow.AddHours(-1) };
-            A.CallTo(() => eventStoreRepository.GetUnprocessedMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
+            A.CallTo(() => eventStoreRepository.GetDeadLetterMessage<TestAsyncMessage>(0)).Returns(JsonConvert.SerializeObject(message));
             var retryData = new RetryData
             {
                 LastRetryTime = DateTimeOffset.UtcNow.AddHours(-1),
@@ -125,6 +125,24 @@ namespace Learning.EventStore.Test.RedisMessageQueue
             await retryClass.RetryAsync().ConfigureAwait(false);
 
             Assert.IsTrue(retryClass.CallBack1Called);
+        }
+
+        [TestMethod]
+        public async Task ChecksForStaleProcessingEvents()
+        {
+            var logger = A.Fake<ILogger>();
+            var eventStoreRepository = A.Fake<IMessageQueueRepository>();
+            A.CallTo(() => eventStoreRepository.GetDeadLetterListLength<TestAsyncMessage>()).Returns(3);
+            var message1 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "0", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(0) });
+            var message2 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "1", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(4) });
+            var message3 = JsonConvert.SerializeObject(new TestAsyncMessage { Id = "2", TimeStamp = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(5) });
+            A.CallTo(() => eventStoreRepository.GetOldestProcessingEvents<TestAsyncMessage>(A<int>._)).Returns(new RedisValue[] { message1, message2, message3 });
+            var subscriber = A.Fake<IEventSubscriber>();
+            var retryClass = new TestAsyncRetryClass(subscriber, eventStoreRepository);
+
+            await retryClass.RetryAsync().ConfigureAwait(false);
+            A.CallTo(() => eventStoreRepository.MoveProcessingEventToDeadLetterQueue<TestAsyncMessage>(A<RedisValue>._, A<TestAsyncMessage>._))
+                .MustHaveHappened(Repeated.Exactly.Once);
         }
     }
 
