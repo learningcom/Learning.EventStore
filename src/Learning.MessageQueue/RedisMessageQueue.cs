@@ -35,7 +35,12 @@ namespace Learning.MessageQueue
 
         public async Task PublishAsync(IMessage message)
         {
-            if(message.TimeStamp == default(DateTimeOffset))
+            await PublishAsync(message, null).ConfigureAwait(false);
+        }
+
+        public async Task PublishAsync(IMessage message, int? capacity)
+        {
+            if (message.TimeStamp == default(DateTimeOffset))
             {
                 message.TimeStamp = DateTimeOffset.UtcNow;
             }
@@ -43,15 +48,15 @@ namespace Learning.MessageQueue
             var serializedEvent = JsonConvert.SerializeObject(message, JsonSerializerSettings);
             var messageType = message.GetType().Name;
 
-            await PublishAsync(serializedEvent, message.Id, messageType).ConfigureAwait(false);
+            await PublishAsync(serializedEvent, message.Id, messageType, capacity).ConfigureAwait(false);
         }
 
-        public async Task PublishAsync(string serializedMessage, string messageId, string messageType)
+        public async Task PublishAsync(string serializedMessage, string messageId, string messageType, int? capacity = null)
         {
             //Publish the event
             for (var i = 0; i < _settings.TransactionRetryCount; i++)
             {
-                var publishTran = await GeneratePublishTransaction(serializedMessage, messageType).ConfigureAwait(false);
+                var publishTran = await GeneratePublishTransaction(serializedMessage, messageType, capacity).ConfigureAwait(false);
                 if (await publishTran.ExecuteAsync().ConfigureAwait(false))
                 {
                     return;
@@ -63,7 +68,8 @@ namespace Learning.MessageQueue
             throw new MessagePublishFailedException(messageId, _settings.TransactionRetryCount);
         }
 
-        private async Task<ITransaction> GeneratePublishTransaction(string serializedEvent, string messageType)
+
+        private async Task<ITransaction> GeneratePublishTransaction(string serializedEvent, string messageType, int? capacity)
         {
             var eventKey = $"{_environment}:{messageType}";
 
@@ -82,6 +88,13 @@ namespace Learning.MessageQueue
             foreach (var subscriber in subscribers)
             {
                 var listKey = $"{subscriber}:{{{eventKey}}}:PublishedEvents";
+
+                if (capacity.HasValue)
+                {
+                    var waiter = new AsyncConditionWaiter(async () => await _redis.Database.ListLengthAsync(listKey) < capacity);
+                    await waiter.WaitForConditionAsync().ConfigureAwait(false);
+                }
+
                 tran.ListLeftPushAsync(listKey, serializedEvent).ConfigureAwait(false);
             }
 
