@@ -50,7 +50,7 @@ namespace Learning.EventStore.Test.SqlServerEventStore
             await _sqlEventStore.SaveAsync(_eventList);
 
             A.CallTo(() => _dapper.ExecuteAsync(_writeDbConnection, A<string>._, A<EventDto>._, CommandType.StoredProcedure, _transaction)).MustHaveHappened();
-            A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._ ))
+            A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._, A<int?>._))
                 .MustHaveHappened();
             A.CallTo(() => _transaction.Commit()).MustHaveHappened();
         }
@@ -58,7 +58,7 @@ namespace Learning.EventStore.Test.SqlServerEventStore
         [TestMethod]
         public async Task RollsBackTransactionIfPublishFails()
         {
-            A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._)).Throws(new Exception("Publish Failed"));
+            A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._, A<int?>._)).Throws(new Exception("Publish Failed"));
 
             try
             {
@@ -67,7 +67,7 @@ namespace Learning.EventStore.Test.SqlServerEventStore
             catch (Exception)
             {
                 A.CallTo(() => _dapper.ExecuteAsync(_writeDbConnection, A<string>._, A<EventDto>._, CommandType.StoredProcedure, _transaction)).MustHaveHappened();
-                A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._))
+                A.CallTo(() => _messageQueue.PublishAsync(_serializedEvent, "12345", A<string>._, A<int?>._))
                     .MustHaveHappened();
                 A.CallTo(() => _transaction.Commit()).MustNotHaveHappened();
                 A.CallTo(() => _transaction.Rollback()).MustHaveHappened();

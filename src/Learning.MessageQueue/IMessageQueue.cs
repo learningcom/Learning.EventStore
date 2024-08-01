@@ -7,6 +7,8 @@ namespace Learning.MessageQueue
     {
         Task PublishAsync(IMessage message);
 
-        Task PublishAsync(string serializedMessage, string messageId, string messageType);
+        Task PublishAsync(IMessage message, int? capacity = null);
+
+        Task PublishAsync(string serializedMessage, string messageId, string messageType, int? capacity = null);
     }
 }

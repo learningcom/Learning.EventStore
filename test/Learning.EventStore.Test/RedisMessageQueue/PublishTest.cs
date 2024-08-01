@@ -108,5 +108,18 @@ namespace Learning.EventStore.Test.RedisMessageQueue
                 A.CallTo(() => _trans.PublishAsync("test:TestEvent", true, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Times(10));
             }
         }
+
+        [TestMethod]
+        public async Task PublishesEventsWithCapacity()
+        {
+            A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
+            A.CallTo(() => _redis.Database.ListLengthAsync("Subscriber1:{test:TestEvent}:PublishedEvents", CommandFlags.None)).ReturnsNextFromSequence(new[] { (long)100, (long)99 });
+            
+            await _messageQueue.PublishAsync(_event, 100);
+
+
+            A.CallTo(() => _trans.PublishAsync("test:TestEvent", true, CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => _redis.Database.ListLengthAsync("Subscriber1:{test:TestEvent}:PublishedEvents", CommandFlags.None)).MustHaveHappened(Repeated.Exactly.Twice);
+        }
     }
 }

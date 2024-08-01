@@ -85,7 +85,7 @@ namespace Learning.EventStore.Test.RedisEventStore
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
             await _redisEventStore.SaveAsync(_eventList);
 
-            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, "12345", A<string>._ ))
+            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, "12345", A<string>._, A<int?>._))
                 .MustHaveHappened();
         }
 
@@ -112,7 +112,7 @@ namespace Learning.EventStore.Test.RedisEventStore
         public async Task DeletesFromEventStoreHashAndCommitListIfPublishThrowsException()
         {
             A.CallTo(() => _trans.ExecuteAsync(CommandFlags.None)).Returns(Task.Run(() => true));
-            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, A<string>._, A<string>._)).Throws(new MessagePublishFailedException("12345", 10));
+            A.CallTo(() => _messageQueue.PublishAsync(A<string>._, A<string>._, A<string>._, A<int?>._)).Throws(new MessagePublishFailedException("12345", 10));
 
             try
             {
