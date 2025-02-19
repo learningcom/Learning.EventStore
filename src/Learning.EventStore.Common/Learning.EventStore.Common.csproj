@@ -6,11 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Sql/PostgresConnectionFactory.cs" Condition=" '$(TargetFramework)' != 'netstandard2.0' " />
-    <Compile Remove="Sql/PostgresEventStoreSettings.cs" Condition=" '$(TargetFramework)' != 'netstandard2.0' " />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
     <PackageReference Include="LibLog" Version="5.0.8">
       <PrivateAssets>all</PrivateAssets>
